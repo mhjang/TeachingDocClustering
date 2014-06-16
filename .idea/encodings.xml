@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="Encoding" useUTFGuessing="true" native2AsciiForPropertiesFiles="false">
+    <file url="file://$PROJECT_DIR$/src/main/java/Classify/Classifier.java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/src/main/java/Classify/ExtractFeature.java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/src/main/java/Classify/StringTokenizerIndx.java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/src/main/java/Classify/TagConstant.java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/src/main/java/Classify/TaggedFileSanityCheck.java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/src/main/java/Clustering/Clustering.java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/src/main/java/Clustering/Document.java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/src/main/java/Clustering/DocumentCollection.java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/src/main/java/Clustering/KMeans/CentroidDocument.java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/src/main/java/Clustering/KMeans/KMeansClustering.java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/src/main/java/NLP/POSTagging.java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/src/main/java/NLP/TaggerDemo.java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/src/main/java/NoiseRemoval/NoiseRemoval.java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/src/main/java/QueryExpansion/QueryExpander.java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/src/main/java/Similarity/CosineSimilarity.java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/src/main/java/Similarity/RSS.java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/src/main/java/TeachingDocParser/Stemmer.java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/src/main/java/TeachingDocParser/StopWordRemover.java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/src/main/java/TeachingDocParser/Tokenizer.java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/src/main/java/TeachingDocParser/WikiParser.java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/src/main/java/TermScoring/ConferenceAnalysis.java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/src/main/java/TermScoring/LanguageModeling/LanguageModeling.java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/src/main/java/TermScoring/TFIDF/TFIDFCalculator.java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/src/main/java/TermScoring/TermExtractor.java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/src/main/java/componentDetection/DetectCodeComponent.java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/src/main/java/componentDetection/DetectEquation.java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/src/main/java/componentDetection/DetectTable.java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/src/main/java/componentDetection/baseline.java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/src/main/java/db/DBConnector.java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/src/main/java/db/makeNGramDB.java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/src/main/java/evaluation/ClusteringFMeasure.java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/src/main/java/indexing/NGramReader.java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/src/main/java/simple/io/myungha/DirectoryReader.java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/src/main/java/simple/io/myungha/SimpleFileReader.java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/src/main/java/simple/io/myungha/SimpleFileWriter.java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/src/main/resources/stopwords.txt" charset="UTF-8" />
+  </component>
+</project>
+
