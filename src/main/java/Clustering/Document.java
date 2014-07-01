@@ -48,6 +48,9 @@ public class Document {
         return termTFIDFMap;
     }
 
+    public void setTFIDFMap(HashMap<String, Double> newTFIDFMap) {
+        this.termTFIDFMap = newTFIDFMap;
+    }
     /**
      * I preserved the original sequence of words separated by lines,
      * but now I just need a flatten list of this.

@@ -1,6 +1,8 @@
 package Clustering;
 
+import Clustering.KMeans.KMeansClustering;
 import Similarity.CosineSimilarity;
+import TermScoring.LanguageModeling.LanguageModeling;
 import evaluation.ClusteringFMeasure;
 import org.lemurproject.galago.core.parse.stem.KrovetzStemmer;
 import TeachingDocParser.StopWordRemover;
@@ -24,10 +26,10 @@ public class Clustering {
     public static void main(String[] args) throws IOException {
         // redirecting a system output to a file
         PrintStream console = System.out;
-        File file = new File("log.txt");
+        File file = new File("original_30_ngramoff.txt");
         FileOutputStream fos = new FileOutputStream(file);
         PrintStream ps = new PrintStream(fos);
-        //     System.setOut(ps);
+      //       System.setOut(ps);
 
         /***
          * Setting the parameters
@@ -42,8 +44,8 @@ public class Clustering {
 
 
         // parameter: whether to use Google N-gram
-        TFIDFCalculator tfidf = new TFIDFCalculator(false);
-        tfidf.calulateTFIDF(TFIDFCalculator.LOGTFIDF, "/Users/mhjang/Documents/teaching_documents/extracted/stemmed/parsed/noise_removed/", Tokenizer.UNIGRAM, false);
+        TFIDFCalculator tfidf = new TFIDFCalculator(true);
+        tfidf.calulateTFIDF(TFIDFCalculator.LOGTFIDF, "/Users/mhjang/Documents/teaching_documents/extracted/stemmed/parsed/gold/feature_tokens_manual/", Tokenizer.UNIGRAM, false);
          DocumentCollection dc = tfidf.getDocumentCollection();
  //       DocumentCollection dc = tfidf.getDocumentCollection("/Users/mhjang/Documents/teaching_documents/extracted/stemmed/parsed/noise_removed", Tokenizer.TRIGRAM, false);
 
@@ -51,15 +53,16 @@ public class Clustering {
         HashMap<String, Document> documentMap = dc.getDocumentSet();
         HashMap<String, Integer> termOccurrenceDic = dc.getglobalTermCountMap();
 
+
         /**
          * Applying language modeling
          * After this method, dc.unigram contains upto top K terms sorted by language modeling
          * by default, k = 50
          * NOTE that this method NULLIFIES bigrams and trigrams.
          */
-    //    LanguageModeling lm = new LanguageModeling(dc, 30, 0.7, 0.2);
-    //    lm.run();
-        //  lm.selectHighTFTerms();
+        LanguageModeling lm = new LanguageModeling(dc, 30, 0.7, 0.2);
+//        lm.run();
+        lm.selectHighTFTerms();
         //  lm.TFIDFBaselineRun();
 
 
@@ -91,15 +94,15 @@ public class Clustering {
         Integer clusterLabelIndex = 0;
         HashMap<String, Integer> clusterLabelMap = new HashMap<String, Integer>();
         // reading a topic file
-        BufferedReader br = new BufferedReader(new FileReader(new File("./topics_resource/topics_v2_stemmed")));
+        BufferedReader br = new BufferedReader(new FileReader(new File("./goldstandard/topics_v2_stemmed")));
         ArrayList<String> topiclist = new ArrayList<String>();
         String line = null;
         while ((line = br.readLine()) != null) {
             topiclist.add(line);
             clusterLabelMap.put(line, clusterLabelIndex++);
         }
-        clusterLabelMap.put("dummy", clusterLabelIndex);
-        topiclist.add("dummy");
+//        clusterLabelMap.put("dummy", clusterLabelIndex);
+//        topiclist.add("dummy");
         Clustering clustering = new Clustering(dc);
   //      clustering.naiveAssignmentLazyUpdate(documentMap, topiclist, infrequentTermThreshold, clusteringThreshold);
 
@@ -112,20 +115,21 @@ public class Clustering {
             ClusteringFMeasure cfm = new ClusteringFMeasure(clusters, clusterLabelMap, topiclist, "/Users/mhjang/Documents/teaching_documents/evaluation/01.csv");
         }
 */
- //       KMeansClustering kmeans = new KMeansClustering(clustering.getClusterFeatures(), dc);
-  /*      KMeansClustering kmeans = new KMeansClustering(topiclist, dc);
-        HashMap<String, LinkedList<String>> clusters = kmeans.convertToTopicMap(kmeans.clusterRun(2, 0.1));
-        ClusteringFMeasure cfm = new ClusteringFMeasure(clusters, clusterLabelMap, topiclist, "./annotation/goldstandard_v2.csv", dc);
+   //     KMeansClustering kmeans = new KMeansClustering(clustering.getClusterFeatures(), dc);
+        KMeansClustering kmeans = new KMeansClustering(topiclist, dc);
+        HashMap<String, LinkedList<String>> clusters = kmeans.convertToTopicMap(kmeans.clusterRun(10, 0.05));
+        ClusteringFMeasure cfm = new ClusteringFMeasure(clusters, clusterLabelMap, topiclist, "./goldstandard/goldstandard_v2.csv", dc);
         cfm.computeAccuracy();
-*/
+   //     kmeans.printCluster(clusters, topiclist);
 
 
-            HashMap<String, LinkedList<String>> clusters = clustering.naiveAssignmentLazyUpdate(documentMap, topiclist, infrequentTermThreshold, clusteringThreshold);
+
+  /*          HashMap<String, LinkedList<String>> clusters = clustering.naiveAssignmentLazyUpdate(documentMap, topiclist, infrequentTermThreshold, clusteringThreshold);
             //  HashMap<String, LinkedList<String>> clusters = clustering.naiveAssignmentLazyUpdateDuplicate(documentMap, topiclist, 0, 0.05);
 
-            ClusteringFMeasure cfm = new ClusteringFMeasure(clusters, clusterLabelMap, topiclist, "./annotation/goldstandard_v2.csv", dc);
+            ClusteringFMeasure cfm = new ClusteringFMeasure(clusters, clusterLabelMap, topiclist, "./goldstandard/goldstandard_v2.csv", dc);
 
-            cfm.computeAccuracy();
+            cfm.computeAccuracy(); */
 //            HashMap<String, LinkedList<String>> clustersInGold = cfm.compAccuracyOnlyItemsInGold();
 //            clustering.printCluster(clustersInGold, topiclist);
 
@@ -434,7 +438,7 @@ public class Clustering {
             System.out.println(topic + ":" + cluster.toString());
             System.out.println();
         }
-        System.out.println(clusters.get(DUMMY).toString());
+//        System.out.println(clusters.get(DUMMY).toString());
     }
 
 

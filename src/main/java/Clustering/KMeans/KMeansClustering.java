@@ -36,7 +36,7 @@ public class KMeansClustering extends Clustering{
         CentroidDocument[] centroids = new CentroidDocument[initFeatures.size()];
         int i=0;
         for(Document d : initFeatures) {
-            CentroidDocument cd = new CentroidDocument(d);
+            CentroidDocument cd = new CentroidDocument(d, 30);
             centroids[i++] = cd;
         }
         return centroids;
@@ -59,6 +59,24 @@ public class KMeansClustering extends Clustering{
          }
         return centroids;
     }
+
+    /**
+     * print the current centroid features
+     * @param centroids
+     */
+    private void printCentroids(CentroidDocument[] centroids) {
+        for(int i=0; i<centroids.length; i++) {
+            CentroidDocument cd = centroids[i];
+            System.out.println("Centroid # " + i);
+            LinkedList<Map.Entry<String, Double>> topTFTerms = cd.getTopTermsTFIDF(10000);
+            for(Map.Entry<String, Double> e: topTFTerms) {
+                System.out.print(e.getKey() + " (" + e.getValue() + ")");
+            }
+            System.out.println();
+        }
+
+    }
+
     public  LinkedList<LinkedList<Document>> clusterRun(int maxIteration, double rssThreshold) throws IOException {
         CentroidDocument[] centroids = initCentroid();
         double curRSS = 0.0, prevRSS = 0.0;
@@ -69,7 +87,7 @@ public class KMeansClustering extends Clustering{
             System.out.println("************* Iteration " + k + " *************");
             clusterAssignments = new LinkedList<LinkedList<Document>>();
             //initialize the cluster assignments
-            for(int i = 0; i<centroids.length; i++) {
+            for (int i = 0; i < centroids.length; i++) {
                 clusterAssignments.add(new LinkedList<Document>());
             }
             // assign a document to each cluster that has the highest cosine similarity
@@ -82,18 +100,15 @@ public class KMeansClustering extends Clustering{
                         maxScore = score;
                         bestClusterIdx = i;
                     }
-       //            System.out.println(score);
+                    //            System.out.println(score);
                 }
-                if(bestClusterIdx > 0) clusterAssignments.get(bestClusterIdx).add(d);
+                if (bestClusterIdx > 0) clusterAssignments.get(bestClusterIdx).add(d);
             }
             // update the centroid vector values by the means of the assigned documents
             for (int i = 0; i < centroids.length; i++) {
                 CentroidDocument centroid = centroids[i];
-                System.out.println("cluster: " + clusterAssignments.get(i).size());
-
                 centroid.updateNewCentroid(clusterAssignments.get(i), CentroidDocument.TFIDFVECTOR);
                 centroids[i] = centroid;
-                System.out.println("centroid size after update: " + centroid.getTFIDFMap().size());
             }
             /**
              * compute RSS for termination condition
@@ -104,8 +119,12 @@ public class KMeansClustering extends Clustering{
                 curRSS += computeRSS(clusterAssignments.get(i));
             }
             System.out.println("RSS : " + curRSS);
-            if (Math.abs(curRSS / prevRSS) < rssThreshold) break;
-            for(int i=0; i< centroids.length; i++) {
+            if (Math.abs(curRSS / prevRSS) < rssThreshold) {
+                System.out.println("current threshold: " + Math.abs(curRSS / prevRSS));
+                break;
+            }
+
+  /*          for(int i=0; i< centroids.length; i++) {
                 System.out.print(topiclist.get(i) + ": \t");
                 LinkedList<Document> cluster = clusterAssignments.get(i);
                 for (Document d : cluster) {
@@ -113,10 +132,12 @@ public class KMeansClustering extends Clustering{
                 }
                 System.out.println();
             }
+
+   */
+
         }
-        /**
-         * print the clusters
-         */
+        printCentroids(centroids);
+
         return clusterAssignments;
     }
 

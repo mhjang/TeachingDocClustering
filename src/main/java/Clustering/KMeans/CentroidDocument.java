@@ -2,8 +2,10 @@ package Clustering.KMeans;
 
 import Clustering.*;
 
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
+import java.util.Map;
 
 /**
  * Created by mhjang on 5/14/14.
@@ -11,11 +13,19 @@ import java.util.LinkedList;
 public class CentroidDocument extends Document {
     static int TFIDFVECTOR = 0;
     static int BINARYVECTOR = 1;
-
+    /** The maximum number of terms that are kept in the vector; default is all **/
+    static int maxFeatureNum = Integer.MAX_VALUE;
     public CentroidDocument(Document d) {
         super(d.getName(), d.getUnigrams(), d.getBigrams(), d.getTrigrams());
         termTFIDFMap = d.getTFIDFMap();
     }
+
+    public CentroidDocument(Document d, int k) {
+        super(d.getName(), d.getUnigrams(), d.getBigrams(), d.getTrigrams());
+        termTFIDFMap = d.getTFIDFMap();
+        maxFeatureNum = k;
+    }
+
     public CentroidDocument(String docName, LinkedList<String> unigrams, LinkedList<String> bigrams, LinkedList<String> trigrams) {
         super(docName, unigrams, bigrams, trigrams);
         termTFIDFMap = this.getTFIDFMap();
@@ -65,15 +75,26 @@ public class CentroidDocument extends Document {
             updateVector(label, vectorscore);
        //     System.out.print(vectorscore + "\t");
         }
-        System.out.println(this.getTFIDFMap().size());
         // test print
         for(int i=0; i<((vecLen>100)?100:vecLen); i++) {
             String label = labelList[i];
      //       System.out.print(this.getTFIDF(label) + " ");
         }
-        System.out.println();
+    //    selectTopTFIDFFeatures(20);
     }
 
+    /**
+     * remove all features but k number of top TF-IDF terms
+     * @param k
+     */
+    public void selectTopTFIDFFeatures(int k) {
+        LinkedList<Map.Entry<String, Double>> topTFIDFTerms = this.getTopTermsTFIDF(k);
+        HashMap<String, Double> newTFIDFMAp = new HashMap<String, Double>();
+        for(Map.Entry<String, Double> e : topTFIDFTerms) {
+            newTFIDFMAp.put(e.getKey(), e.getValue());
+        }
+        this.setTFIDFMap(newTFIDFMAp);
+    }
 
 
     public void updateVector(String term, double score) {
