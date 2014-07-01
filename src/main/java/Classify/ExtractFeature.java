@@ -5,6 +5,7 @@ import com.clearnlp.dependency.DEPNode;
 import com.clearnlp.dependency.DEPTree;
 import com.clearnlp.reader.DEPReader;
 import com.clearnlp.util.UTInput;
+import com.drew.metadata.Directory;
 import componentDetection.DetectCodeComponent;
 import componentDetection.DetectEquation;
 import componentDetection.DetectTable;
@@ -98,9 +99,9 @@ public class ExtractFeature {
 
     static int featureNodeNum = 3;
 
-    File modelFile = new File("slide_model_final");
+    File modelFile = new File("slide_model_0608");
     Model model;
-    int removedNode = 0;
+    int removedNode = 0, remainingNode = 0;
 
     static class FeatureComparator<Feature> implements Comparator {
 
@@ -116,37 +117,25 @@ public class ExtractFeature {
 
     FeatureComparator fc = new FeatureComparator();
 
+    int[] componentCount;
 
     static public void main(String[] args) throws IOException {
 
-
-   /*
-        for five fold cross validation
-    */
-
         ExtractFeature ef = new ExtractFeature();
-        ef.prepareFeatureForDocuments();
+//       apply the classifer to the other documents
+        ef.generateCodeRemovedDocuments();
+//        ef.prepareFeatureForDocuments();
 
-     /*   String allAnnotationDir = "/Users/mhjang/Desktop/clearnlp/all/annotation";
-        String allParsingDir = "/Users/mhjang/Desktop/clearnlp/all/parsed";
-        final File folder = new File(allAnnotationDir);
-        ArrayList<String> filenames = new ArrayList<String>();
+/*        String baseDir = "/Users/mhjang/Desktop/clearnlp/allslides/";
+        String allAnnotationDir = baseDir + "annotation/";
+        String allParsingDir = baseDir + "parsed/";
 
-        int crossfold = 5;
-        // for five fold
-        for (final File fileEntry : folder.listFiles()) {
-            if (!fileEntry.getName().contains(".DS_Store")) {
-                filenames.add(fileEntry.getName());
-            }
-            System.out.println(fileEntry.getName());
-            // for five fold
-        }
-        int j, testIdx;
+        DirectoryReader dr = new DirectoryReader(allAnnotationDir);
 
 
-        LinkedList<Feature[]> allFeatures = ef.generateClassifyFeatures(filenames);
-        /** Generate a problem with trainng set features */
- /*       Feature[][] allFeaturesArray = new Feature[allFeatures.size()][];
+        LinkedList<Feature[]> allFeatures = ef.generateClassifyFeatures(baseDir, dr.getFileNameList());
+        // Generate a problem with trainng set features
+        Feature[][] allFeaturesArray = new Feature[allFeatures.size()][];
 
         for (int i = 0; i < allFeatures.size(); i++) {
             allFeaturesArray[i] = allFeatures.get(i);
@@ -159,45 +148,43 @@ public class ExtractFeature {
         problem.l = allFeatures.size();
 
 
-
-      /*  System.out.println("average length of noises : " + (double)ef.averageNoiseTokenLength / (double)numOfNoises);
-        System.out.println("average length of X noises : " + (double)ef.averageNotNoiseTokenLength / ((double)ef.allFeatures.size()- numOfNoises));
-        System.out.println("# of Noises: " + numOfNoises);
-        System.out.println("# of X Noises: " + ((double)ef.allFeatures.size() - numOfNoises));
-        */
-
-   /*     SolverType solver = SolverType.L2R_L2LOSS_SVC; // -s 0
+        SolverType solver = SolverType.L2R_L2LOSS_SVC; // -s 0
         double C = 1.0;    // cost of constraints violation
         double eps = 0.01; // stopping criteria
         int correctItem = 0;
 
         Parameter param = new Parameter(SolverType.L2R_L2LOSS_SVC, 10, 0.01);
-        Model model = Linear.train(problem, param);
-        File modelFile = new File("acl_model_final");
-        model.save(modelFile);
+  //      Model model = Linear.train(problem, param);
+        File modelFile = new File("slide_model_0608");
+  //      model.save(modelFile);
+        Model model = Model.load(modelFile);
 
 
- /*       for(int i=0; i<allFeaturesArray.length; i++) {
+        int[] componentcounts= new int[5];
+        for(int i=0; i<5; i++) {
+            componentcounts[i] = 0;
+        }
+
+        for(int i=0; i<allFeaturesArray.length; i++) {
             Feature[] instance = allFeaturesArray[i];
             int prediction = (int)Linear.predict(model, instance);
             if(problem.y[i] == prediction) correctItem++;
+            componentcounts[prediction]++;
         }
- */
-   //     System.out.println("Accuracy:" + (double)correctItem/(double)problem.y.length);
 
-
+        System.out.println("Accuracy:" + (double)correctItem/(double)problem.y.length);
+        for(int i=0; i<5; i++) {
+            System.out.println(i + ":" + componentcounts[i]);
+        }
+/*
         int nr_fold = 5;
-   /*     double[] target = new double[problem.l];
-        Linear.crossValidation(problem, param, nr_fold, target);
-*/
-  /*      double[] target = ef.predictedAnswers;
-
+        double[] target = new double[problem.l];
+    //    Linear.crossValidation(problem, param, nr_fold, target);
         int correctByComponent = 0;
 
-        int codeComponentCorrect = 0, tableComponentCorrect = 0, equComponentCorrect = 0, miscComponentCorrect = 0;
-
-        HashMap<Integer, Integer> classLabelCount = new HashMap<Integer, Integer>();
         HashMap<String, Integer> componentAccuracy = new HashMap<String, Integer>();
+        HashMap<Integer, Integer> classLabelCount = new HashMap<Integer, Integer>();
+
         // initialize
         componentAccuracy.put(TagConstant.tableTag, 0);
         componentAccuracy.put(TagConstant.codeTag, 0);
@@ -205,6 +192,15 @@ public class ExtractFeature {
         componentAccuracy.put(TagConstant.miscTag, 0);
         componentAccuracy.put(TagConstant.textTag, 0);
 
+  /*      double[] target = ef.predictedAnswers;
+
+
+        int codeComponentCorrect = 0, tableComponentCorrect = 0, equComponentCorrect = 0, miscComponentCorrect = 0;
+
+        HashMap<Integer, Integer> classLabelCount = new HashMap<Integer, Integer>();
+        */
+
+/*
         int i=0;
         while(i<target.length) {
             System.out.println("predicted label: " + target[i] + " answer: " +  ef.answers[i]);
@@ -280,9 +276,14 @@ public class ExtractFeature {
             }
             i++;
         }
-            int correctItem = 0;
-            for(i=0; i<target.length; i++) {
+        */
+/*            correctItem = 0;
+            int predictedComponents = 0;
+            for(int i=0; i<target.length; i++) {
                 if ((int) ef.answers[i] == (int) target[i]) correctItem++;
+                if((int) ef.answers[i] != (int)TagConstant.TEXT) {
+                    predictedComponents++;
+                }
                 if (TagConstant.getTagLabelByComponent((int) ef.answers[i]).equals(TagConstant.getTagLabelByComponent((int) target[i]))) {
                     String component = TagConstant.getTagLabelByComponent((int) ef.answers[i]);
                     componentAccuracy.put(component, componentAccuracy.get(component) + 1);
@@ -295,12 +296,17 @@ public class ExtractFeature {
                     classLabelCount.put((int) ef.answers[i], 1);
             }
 
+        int tableCount = classLabelCount.get(TagConstant.BEGINTABLE);
+        int codeCount = classLabelCount.get(TagConstant.BEGINCODE);
+        int equCount = classLabelCount.get(TagConstant.BEGINEQU);
+        int miscCount = classLabelCount.get(TagConstant.BEGINMISC);
 
-        int tableCount = classLabelCount.get(TagConstant.BEGINTABLE) + classLabelCount.get(TagConstant.INTTABLE) + classLabelCount.get(TagConstant.ENDTABLE);
+
+   /*     int tableCount = classLabelCount.get(TagConstant.BEGINTABLE) + classLabelCount.get(TagConstant.INTTABLE) + classLabelCount.get(TagConstant.ENDTABLE);
         int codeCount = classLabelCount.get(TagConstant.BEGINCODE) + classLabelCount.get(TagConstant.INTCODE) + classLabelCount.get(TagConstant.ENDCODE);
         int equCount = classLabelCount.get(TagConstant.BEGINEQU) + classLabelCount.get(TagConstant.INTEQU) + classLabelCount.get(TagConstant.ENDEQU);
         int miscCount = classLabelCount.get(TagConstant.BEGINMISC) + classLabelCount.get(TagConstant.INTMISC) + classLabelCount.get(TagConstant.ENDMISC);
-
+*/
         /**************************
          * print out exp settings
          ***************************/
@@ -314,8 +320,10 @@ public class ExtractFeature {
         System.out.println("structural feature : " + structuralFeatureOn);
         System.out.println("structural depdency feature : " + structuralDependencyOn);
 
+        System.out.println("Predicted components: " + predictedComponents);
+        System.out.println("Total token: " + ef.answers.length);
 
-        for(i=0; i<13; i++) {
+        for(int i=0; i<13; i++) {
             System.out.println(TagConstant.getTagLabel(i) + ":" + classLabelCount.get(i));
         }
 
@@ -334,7 +342,7 @@ public class ExtractFeature {
         System.out.println("Equation Accuracy: " + (double)componentAccuracy.get(TagConstant.equTag) / (double) equCount);
         System.out.println("Misc Accuracy: " + (double)componentAccuracy.get(TagConstant.miscTag) / (double) miscCount);
 
-        System.out.println("Exact Match");
+ /*       System.out.println("Exact Match");
         System.out.println("Table Accuracy: " + tableComponentCorrect/ (double) classLabelCount.get(TagConstant.BEGINTABLE));
         System.out.println("Code Accuracy: " + codeComponentCorrect / (double)classLabelCount.get(TagConstant.BEGINCODE));
         System.out.println("Equation Accuracy: " + equComponentCorrect / (double) classLabelCount.get(TagConstant.BEGINEQU));
@@ -392,6 +400,26 @@ public class ExtractFeature {
         else return TagConstant.miscCloseTag;
     }
 
+
+    private void generateCodeRemovedDocuments() throws IOException {
+        String baseDir = "/Users/mhjang/Documents/teaching_documents/extracted/stemmed/parsed/gold/feature_tokens/";
+        String newDir = "/Users/mhjang/Documents/teaching_documents/extracted/stemmed/parsed/gold/code_removed/";
+
+        DirectoryReader dr = new DirectoryReader(baseDir);
+        for(String filename: dr.getFileNameList()) {
+            System.out.println(filename);
+            SimpleFileReader sr = new SimpleFileReader(baseDir + filename);
+            SimpleFileWriter sw = new SimpleFileWriter(newDir + filename);
+
+            while(sr.hasMoreLines()) {
+                String line = sr.readLine();
+                if(!DetectCodeComponent.isCodeLine(line))
+                    sw.writeLine(line);
+            }
+            sw.close();
+        }
+    }
+
     /**
      * Extract features for applying the model
      * @param
@@ -402,13 +430,17 @@ public class ExtractFeature {
         //     read all annotated files from the directory
         //     String directory = "/Users/mhjang/Desktop/clearnlp/trainingdata/annotation/";
        // String parsedDir = "/Users/mhjang/Documents/teaching_documents/extracted/stemmed/parsed/";
-        String baseDir = "/Users/mhjang/Documents/teaching_documents/extracted/stemmed/parsed/";
-        String parsedDir = baseDir;
+        String baseDir = "/Users/mhjang/Documents/teaching_documents/extracted/stemmed/parsed/gold/";
+        String parsedDir = baseDir + "parsed/";
         model = Model.load(modelFile);
         String noiseRemovedline;
-        DirectoryReader dr = new DirectoryReader(baseDir);
+        ArrayList<Double> ratios = new ArrayList<Double>();
+        componentCount = new int[5];
+        DirectoryReader dr = new DirectoryReader(parsedDir);
         try {
             for (String filename : dr.getFileNameList()) {
+                removedNode = 0;
+                remainingNode = 0;
                 DEPReader reader = new DEPReader(0, 1, 2, 3, 4, 5, 6);
 
                 if (filename.contains(".DS_Store")) continue;
@@ -425,11 +457,11 @@ public class ExtractFeature {
                 String line;
                 String filename_ = filename.replace(".cnlp","");
                 String featureTokenDir = baseDir + "feature_tokens/";
-                String outputDir = baseDir + "code_saved/";
+                String outputDir = baseDir + "noise_removed/";
                 SimpleFileReader freader = new SimpleFileReader(featureTokenDir + filename_);
                 SimpleFileWriter fwriter = new SimpleFileWriter(outputDir + filename_);
 
-                System.out.println("opening" + filename);
+                System.out.println(filename);
 
                 boolean isTagBeginLine = false, tagClosed = false;
                 String endTag = null;
@@ -448,12 +480,29 @@ public class ExtractFeature {
 
                 }
                 fwriter.close();
+                double ratio = (double)removedNode / (double)(removedNode + remainingNode);
+                System.out.println("Noise Ratio: " + ratio);
+                ratios.add(ratio);
+                // print the number of components predicted
+                int sum = 0;
+                for(int i=0; i<5; i++) {
+                    sum += componentCount[i];
+                    System.out.print(componentCount[i] + "\t");
+                    // then initialize
+                    componentCount[i] = 0;
+                }
+                System.out.println(sum);
             }
 
         } catch (Exception e) {
             e.printStackTrace();
         }
         System.out.println("# of removed nodes: " + removedNode);
+        double ratioSum = 0.0;
+        for(Double d : ratios) {
+            ratioSum += d;
+        }
+        System.out.println("Average removed noise ratio: " + ratioSum / (double)ratios.size());
     }
 
 
@@ -465,10 +514,11 @@ public class ExtractFeature {
      * @return
      * @throws java.io.IOException
      */
-    public LinkedList<Feature[]> generateClassifyFeatures(ArrayList<String> data) throws IOException {
+    public LinkedList<Feature[]> generateClassifyFeatures(String baseDir, ArrayList<String> data) throws IOException {
         //     read all annotated files from the directory
         //     String directory = "/Users/mhjang/Desktop/clearnlp/trainingdata/annotation/";
-        String parsedDir = "/Users/mhjang/Desktop/clearnlp/all/parsed/";
+        // baseDir = "/Users/mhjang/Desktop/clearnlp/allslides/";
+         String parsedDir = baseDir + "parsed/";
         model = Model.load(modelFile);
         try {
             for (String filename : data) {
@@ -483,15 +533,25 @@ public class ExtractFeature {
                     treelist.add(tree);
 
                }
-                System.out.println("Tree size: " + treelist.size());
                 // then open an annotation file
                 int treeIdx = 0;
                 String line;
-                SimpleFileReader freader = new SimpleFileReader("/Users/mhjang/Desktop/clearnlp/all/annotation/" + filename);
-                System.out.println("opening" + filename);
+                SimpleFileReader freader = new SimpleFileReader(baseDir + "annotation/" + filename);
+           //     System.out.println("loading " + filename);
 
                 boolean isTagBeginLine = false, tagClosed = false;
                 String endTag = null;
+
+                //initialize component count
+
+                componentCount = new int[5];
+                for(int i=0; i<5; i++) {
+                    componentCount[i] = 0;
+                }
+                int numOfTokensInDoc = 0;
+
+
+
                 while(freader.hasMoreLines()) {
                     line = freader.readLine();
                     /**
@@ -511,7 +571,6 @@ public class ExtractFeature {
                     line = line.trim();
 
                     if (!line.isEmpty()) {
-                        LinkedList<String> tokens = new LinkedList<String>();
                         int startIdx = 0;
                      // If currently no tag was opened
                         if (initiatedTag == null) {
@@ -562,7 +621,7 @@ public class ExtractFeature {
                   //      System.out.println(treeIdx + ":" + line);
                   //      printTree(treeIdx, treelist.get(treeIdx));
                         extractFeatureFromTree(componentBegin, componentEnd, treelist.get(treeIdx), initiatedTag, beginToken, endToken, DetectCodeComponent.isCodeLine(line), DetectEquation.isEquation(line), DetectTable.isTable(line));
-
+                        numOfTokensInDoc += treelist.get(treeIdx).size() - 1;
                         if (tagClosed) {
                             initiatedTag = null;
                             tagClosed = false;
@@ -571,7 +630,12 @@ public class ExtractFeature {
                         treeIdx++;
                     }
 
-                    }
+                 }
+                for(int i=0; i<5; i++) {
+                    System.out.print(((double)componentCount[i] / (double)numOfTokensInDoc) + "\t");
+                }
+                System.out.println(numOfTokensInDoc);
+           //     System.out.println();
               }
 
         } catch (Exception e) {
@@ -897,6 +961,8 @@ public class ExtractFeature {
             } else {
                 answers[featureIdx] = TagConstant.TEXT;
             }
+            componentCount[toIndex(TagConstant.getTagLabelByComponent((int)answers[featureIdx]))]++;
+
 
             featureList.add(features);
             featureIndexList.add(featureIndex);
@@ -950,6 +1016,15 @@ public class ExtractFeature {
     }
     }
 
+    private int toIndex(String tagName) {
+        if(tagName.equals(TagConstant.tableTag)) return 0;
+        if(tagName.equals(TagConstant.codeTag)) return 1;
+        if(tagName.equals(TagConstant.equTag)) return 2;
+        if(tagName.equals(TagConstant.miscTag)) return 3;
+        if(tagName.equals(TagConstant.textTag)) return 4;
+        return -1;
+
+    }
 
     /**
      * 6/1/2014
@@ -1241,15 +1316,17 @@ public class ExtractFeature {
             allFeatures.add(featureArray);
 
             predictedAnswers[featureIdx] = Linear.predict(model, featureArray);
-            if(TagConstant.getTagLabelByComponent((int)predictedAnswers[featureIdx]) == TagConstant.textTag || TagConstant.getTagLabelByComponent((int)predictedAnswers[featureIdx]) == TagConstant.codeTag)
+            if(TagConstant.getTagLabelByComponent((int)predictedAnswers[featureIdx]) == TagConstant.textTag)
             {
                 builder.append(node.form + " ");
+                remainingNode++;
             }
             else {
                 removedNode++;
-                System.out.println(node.form);
+             //   System.out.println(node.form);
             }
-
+            // count the number of components predicted
+            componentCount[(int)predictedAnswers[featureIdx]]++;
 
             //       predictedAnswers[featureIdx] = 0;
             featureIdx++;

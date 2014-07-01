@@ -51,10 +51,10 @@ public class ClusteringFMeasure {
                     if(elements[i].length() >0) {
                         documents.add(elements[i]);
                         goldpool.add(elements[i]);
-                        System.out.print(elements[i] + "\t");
+          //              System.out.print(elements[i] + "\t");
                     }
                 }
-                System.out.println(clusterID);
+      //          System.out.println(clusterID);
                 goldstandard.put(clusterID++, documents);
             }
         }catch(Exception e) {
@@ -149,7 +149,9 @@ public class ClusteringFMeasure {
         double length = (double)topiclist.size()-1;
         avgPrecision /= length;
         avgRecall /= length;
-        System.out.println("Avg Precision: " + avgPrecision+ "\t Avg Recall: " + avgRecall + "\t Avg F-measure:" + (2*avgPrecision*avgRecall)/(avgPrecision + avgRecall));
+        System.out.println(avgPrecision+ "\t"+ avgRecall + "\t" + (2*avgPrecision*avgRecall)/(avgPrecision + avgRecall));
+
+//        System.out.println("Avg Precision: " + avgPrecision+ "\t Avg Recall: " + avgRecall + "\t Avg F-measure:" + (2*avgPrecision*avgRecall)/(avgPrecision + avgRecall));
  //      return fMeasure;
 
       }

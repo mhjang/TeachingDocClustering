@@ -24,13 +24,117 @@ public class TermExtractor {
 
     static int lineIndex = 0;
     static DecimalFormat numberFormat = new DecimalFormat(("#.000"));
-    static NGramReader ngReader;
+    static String[] colors = {"#ffeda3", "#428bca", "#5cb85c", "#5bc0de", "#f0ad4e", "#d9534f"};
+
+    /**
+     *
+     * @param args: -i [input filepath] -c [the number of columns] -k [top k terms to display] -o [output filename]
+     * @throws java.io.IOException
+     */
+    public static void main(String[] args) throws IOException {
+        String dir = "/Users/mhjang/Documents/teaching_documents/extracted/stemmed/parsed/gold/feature_tokens/";
+        int columnNum = 5, k = 30;
+        String outFileName = "./output/original_googlengram.html";
+
+        /**
+         *  process the arguments
+         */
+        for (int i = 0; i < args.length; i++) {
+            if (args[i].equals("-i")) {
+                dir = args[++i];
+            } else if (args[i].equals("-c")) {
+                columnNum = Integer.parseInt(args[++i]);
+            } else if (args[i].equals("-o")) {
+                outFileName = args[++i];
+            } else if (args[i].equals("-k")) {
+                k = Integer.parseInt(args[++i]);
+
+            }
+        }
+
+        File file = new File(outFileName);
+        BufferedWriter bw = new BufferedWriter(new FileWriter(file));
+
+        TFIDFCalculator tfidf = new TFIDFCalculator(true);
+        tfidf.calulateTFIDF(TFIDFCalculator.LOGTFIDF, dir, Tokenizer.UNIGRAM, false);
+        DocumentCollection dc = tfidf.getDocumentCollection();
+
+        /***
+         * add heading
+         */
+        bw.write("<!DOCTYPE html>\n" +
+                "<html lang=\"en\">\n" +
+                "  <head>\n" +
+                "    <meta charset=\"utf-8\">\n" +
+                "    <meta http-equiv=\"X-UA-Compatible\" content=\"IE=edge\">\n" +
+                "    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">\n" +
+                "    <title> Term Tablize Ver 1.0 </title>\n" +
+                "\n" +
+                "    <!-- Bootstrap -->\n" +
+                "    <link href=\"css/bootstrap.min.css\" rel=\"stylesheet\">\n" +
+                "  </head>\n");
+
+        bw.write("<script src=\"http://ajax.googleapis.com/ajax/libs/jquery/1.10.2/jquery.min.js\"></script> \n");
+        bw.write("<center><H2> High TF/IDF Term Tablization </H2> <hr> <br><br>");
+        // bw.write("<span class=\"label label-default\">View All</span>");
+
+        bw.write("<table border=\"0\" width=\"1051\"> \n");
+
+
+        HashMap<String, Document> documentSet = dc.getDocumentSet();
+        for (String docName : documentSet.keySet()) {
+            Document doc = documentSet.get(docName);
+            LinkedList<Map.Entry<String, Double>> topRankedTerms = doc.getTopTermsTFIDF(k);
+            generateHTMLTable(doc.getName(), topRankedTerms, colors[0], bw);
+        }
+
+        bw.write("</table> \n");
+        bw.write("<script>\n" +
+                "$(document).ready(function(){\n" +
+                "var idx = 0;" +
+                "var colour = [\"#ffeda3\", \"#428bca\", \"#5cb85c\", \"#5bc0de\", \"#f0ad4e\", \"#d9534f\"];\n" +
+                "   $(\"td\").click(function() {\n" +
+                "        var rand = Math.floor(Math.random() * colour.length);\n" +
+                "        var classId = $(this).attr(\"class\");" +
+                "        if ($(\".\"+classId).css(\"background-color\") == 'rgba(0, 0, 0, 0)') \n" +
+                "        \t$(\".\"+classId).css(\"background-color\", colour[rand]);\n" +
+                "        else $(\".\"+classId).css(\"background-color\", 'rgba(0, 0, 0, 0)');\n" +
+                "        });\n" +
+                "}); \n </script>");
+        bw.close();
+
+
+
+
+    }
+
+    public static void generateHTMLTable(String tableName, LinkedList<Map.Entry<String, Double>> elements, String tableColor, BufferedWriter bw) throws IOException {
+        if(lineIndex % 4 == 0) {
+            if(lineIndex != 0) bw.write("</tr> \n");
+            bw.write("<tr> \n");
+        }
+        bw.write("<td>\n");
+        bw.write("<table class = \"table table-condensed\" border=\"0\" cellpadding=\"2\" cellspacing=\"0\" style=\"width:250px\" text-align: center;\"> \n");
+        bw.write("<tr> <td style=\"background-color: "+tableColor +"; id=\""+ tableName + "\"><b>" + tableName + "</b></td></tr> \n");
+        for(Map.Entry<String, Double> ele : elements) {
+            String[] tokens = ele.getKey().split(" ");
+
+            bw.write("<tr> <td class=\""+tokens[0]+"\">" + ele.getKey() + "("+ numberFormat.format(ele.getValue()) +") </td></tr> \n");
+        }
+        bw.write("</table> \n");
+        bw.write("</td> \n");
+        lineIndex++;
+    }
+
 
     /**
      *
      * @param args: -i [input filepath] -c [the number of columns] -o [output filename]
      * @throws java.io.IOException
      */
+
+
+    /*
     public static void main(String[] args) throws IOException {
         String dir = null;
         int columnNum = 5;
@@ -68,7 +172,7 @@ public class TermExtractor {
      //   lm.run();
 
       //  dc.printDocumentList();
-        /** topic name -> topic index -> gold documents **/
+        // topic name -> topic index -> gold documents
         Integer clusterLabelIndex = 0;
         HashMap<String, Integer> clusterLabelMap = new HashMap<String, Integer>();
         // reading a topic file
@@ -84,14 +188,14 @@ public class TermExtractor {
             clusterLabelMap.put(line, clusterLabelIndex++);
           //  System.out.println(line + "," + clusterLabelIndex);
         }
-        /** topic name -> wikipedia article */
+        // topic name -> wikipedia article
         QueryExpander qe = new QueryExpander(dc);
         HashMap<String, Document> wikiDocMap = qe.getWikiDocuments("./wikiexpansion_resource/ver2/html");
 
         int colorIdx = 0;
         for(String topicName: topiclist) {
             Document wikiDoc = wikiDocMap.get(topicName);
-            LinkedList<Map.Entry<String, Integer>> topRankedTermsWiki = wikiDoc.getTopTermsTF(10);
+            LinkedList<Map.Entry<String, Integer>> topRankedTermsWiki = wikiDoc.getTopTFTerms(10);
             generateHTMLTableWiki(topicName, topRankedTermsWiki, colors[colorIdx]);
             // print wikiDoc.top20TFTerms
       //      System.out.println(topicName);
@@ -123,6 +227,7 @@ public class TermExtractor {
      * @param tableName
      * @param elements
      */
+    /*
     public static void generateHTMLTableWiki(String tableName, LinkedList<Map.Entry<String, Integer>> elements, String tableColor) {
         if(lineIndex % 5 == 0) {
             System.out.println("</tr>");
@@ -189,6 +294,7 @@ public class TermExtractor {
     /**
      * Attach JQUery Script that allows highlights the terms over the documents
      */
+    /*
     public static void attachScript() {
         System.out.println("<script>\n" +
                 "$(document).ready(function(){\n" +
@@ -205,7 +311,7 @@ public class TermExtractor {
 
     }
 //        qe.expandTopicQueriesWithFrequentTerms(clusterFeatureMap, "./wikiexpansion_resource/ver2/html", dc.getglobalTermCountMap(), termFilterThreshold);
-
+*/
     }
 
 

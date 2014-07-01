@@ -20,15 +20,16 @@ public class NGramReader {
     DiskMapReader bigramReader;
     DiskMapReader trigramReader;
 
-    File unigramFile = new File("ngram_index/1gms0");
-    File bigramFile = new File("ngram_index/2gms");
-    File trigramFile = new File("ngram_index/3gms_1");
+    File unigramFile = new File("/Users/mhjang/Documents/workspace/TeachingTest/ngram_index/1gms0");
+    File bigramFile = new File("/Users/mhjang/Documents/workspace/TeachingTest/ngram_index/2gms");
+    File trigramFile = new File("/Users/mhjang/Documents/workspace/TeachingTest/ngram_index/3gms_1");
 
     BigInteger unigramTotalCount = BigInteger.valueOf(1024908267);
     BigInteger bigramTotalCount = BigInteger.valueOf(1024908267);
     BigInteger trigramTotalCount = BigInteger.valueOf(1024908267);
 
     public NGramReader() throws IOException {
+        System.out.println("Google N-gram reader initiated :) ");
         unigramReader = new DiskMapReader(unigramFile.getAbsolutePath());
         bigramReader = new DiskMapReader(bigramFile.getAbsolutePath());
         trigramReader = new DiskMapReader(trigramFile.getAbsolutePath());

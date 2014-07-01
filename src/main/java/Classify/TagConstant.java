@@ -4,7 +4,7 @@ package Classify;
  * Created by mhjang on 6/3/14.
  */
 public class TagConstant {
-
+/*
     static int BEGINTABLE = 1;
     static int INTTABLE = 2;
     static int ENDTABLE = 3;
@@ -20,6 +20,24 @@ public class TagConstant {
     static int BEGINMISC = 10;
     static int INTMISC = 11;
     static int ENDMISC = 12;
+    static int TEXT = 0;
+*/
+
+    static int BEGINTABLE = 1;
+    static int INTTABLE = 1;
+    static int ENDTABLE = 1;
+
+    static int BEGINCODE = 2;
+    static int INTCODE = 2;
+    static int ENDCODE = 2;
+
+    static int BEGINEQU = 3;
+    static int INTEQU = 3;
+    static int ENDEQU = 3;
+
+    static int BEGINMISC = 4;
+    static int INTMISC = 4;
+    static int ENDMISC = 4;
     static int TEXT = 0;
 
     static String tableTag = "<TABLE>";

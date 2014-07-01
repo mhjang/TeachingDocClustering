@@ -33,6 +33,22 @@ public class DocumentCollection {
         }
         System.out.println("Unigram Stats: " + (double)(sum)/(double)(documentSet.size()));
     }
+
+    /**
+     * 2014/7/1
+     * Construct a signature vector from a document collection
+     * @return
+     */
+    public void constructSignatureVector() {
+        for(Document d : documentSet.values()) {
+
+        }
+    }
+
+
+
+
+
     public int getCollectionSize() {
         return documentSet.size();
     }

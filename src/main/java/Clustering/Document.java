@@ -169,7 +169,12 @@ public class Document {
 
     }
 
-    public LinkedList<Map.Entry<String, Integer>> getTopTermsTF(int k) {
+    /**
+     * Returns a linkedlist that contains a map of <Term, Term_Frequency> for the top K terms ranked by term frequency
+     * @param k
+     * @return
+     */
+    public LinkedList<Map.Entry<String, Integer>> getTopTFMap(int k) {
         LinkedList<Map.Entry<String, Integer>> list =
                 new LinkedList<Map.Entry<String, Integer>>(termFrequency.entrySet());
           Collections.sort(list, new Comparator<Map.Entry<String, Integer>>() {
@@ -186,11 +191,11 @@ public class Document {
     }
 
     /**
-     * This one returns LinkedList<String> whereas getTopTermsTF returns LInkedLIst<Entry<String, Integer>>
+     * Returns a linkedlist that contains top K terms ranked by term frequency
      * @param k
      * @return
      */
-    public LinkedList<String> getTopTermsTF2(int k) {
+    public LinkedList<String> getTopTFTerms(int k) {
         LinkedList<Map.Entry<String, Integer>> list =
                 new LinkedList<Map.Entry<String, Integer>>(termFrequency.entrySet());
         Collections.sort(list, new Comparator<Map.Entry<String, Integer>>() {

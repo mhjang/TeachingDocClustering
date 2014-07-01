@@ -75,6 +75,11 @@ public class LanguageModeling {
         for (String docName : docSet.keySet()) {
             Document d = docSet.get(docName);
             d.setUnigrams(d.getTopTermsTF2(k));
+            System.out.println(d.getName());
+            for(String t : d.getUnigrams()) {
+                System.out.print(t + "\t");
+            }
+            System.out.println();
             d.setBigrams(null);
             d.setTrigrams(null);
 
