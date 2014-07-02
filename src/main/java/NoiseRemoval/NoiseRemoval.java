@@ -2,6 +2,8 @@ package NoiseRemoval;
 ;
 
 import componentDetection.DetectCodeComponent;
+import simple.io.myungha.DirectoryReader;
+import simple.io.myungha.SimpleFileReader;
 
 import java.io.*;
 import java.util.ArrayList;
@@ -19,8 +21,9 @@ public class NoiseRemoval {
 
     public static void main(String[] args) throws IOException {
         NoiseRemoval nrm = new NoiseRemoval();
-        nrm.decodeClassification();
+  //      nrm.decodeClassification();
    //     nrm.heuristics();
+        nrm.computeRemovalRatio("/Users/mhjang/Documents/teaching_documents/extracted/stemmed/parsed/gold/feature_tokens/", "/Users/mhjang/Documents/teaching_documents/extracted/stemmed/parsed/gold/feature_tokens_manual/");
     }
 
     /**
@@ -138,6 +141,32 @@ public class NoiseRemoval {
 
     }
 
+
+    public void computeRemovalRatio(String originalDir, String newDir) throws IOException {
+        DirectoryReader dr = new DirectoryReader(originalDir);
+        DirectoryReader dr2 = new DirectoryReader(newDir);
+
+        for(String docName : dr.getFileNameList()) {
+            SimpleFileReader sf = new SimpleFileReader(originalDir + docName);
+            String line;
+            int originalTokenNum = 0;
+            while(sf.hasMoreLines()) {
+                line = sf.readLine();
+                String[] tokens = line.split(" ");
+                originalTokenNum += tokens.length;
+            }
+
+            SimpleFileReader sf2 = new SimpleFileReader(newDir + docName);
+            int newTokenNum = 0;
+            while(sf2.hasMoreLines()) {
+                line = sf2.readLine();
+                String[] tokens = line.split(" ");
+                newTokenNum += tokens.length;
+            }
+            System.out.println(docName + "\t" + originalTokenNum + "\t" + newTokenNum + "\t" + (double)newTokenNum/(double)originalTokenNum);
+        }
+
+    }
 
 
 }
