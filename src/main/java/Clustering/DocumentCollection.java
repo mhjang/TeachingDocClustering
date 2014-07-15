@@ -1,6 +1,8 @@
 package Clustering;
 
 import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.Map;
 
 /**
  * Created by mhjang on 2/18/14.
@@ -36,13 +38,23 @@ public class DocumentCollection {
 
     /**
      * 2014/7/1
-     * Construct a signature vector from a document collection
-     * @return
+     * Construct a signature vector from a document collection with top K terms extracted from each document
+     * @return LinkedList<String>
      */
-    public void constructSignatureVector() {
+    public LinkedList<String> constructSignatureVector(int k) {
+        LinkedList<String> signatureTerms = new LinkedList<String>();
+        System.out.println("signature terms");
         for(Document d : documentSet.values()) {
-
+           LinkedList<Map.Entry<String, Double>> keywords = d.getTopTermsTFIDF(k);
+           for(Map.Entry<String, Double> terms : keywords) {
+               if(!signatureTerms.contains(terms.getKey())) {
+                   signatureTerms.add(terms.getKey());
+                   System.out.print(terms.getKey() + "\t");
+               }
+           }
         }
+        System.out.println();
+        return signatureTerms;
     }
 
 

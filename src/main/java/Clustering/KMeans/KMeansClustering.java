@@ -4,6 +4,7 @@ import Clustering.*;
 import Similarity.CosineSimilarity;
 
 import java.io.IOException;
+import java.text.DecimalFormat;
 import java.util.*;
 
 /**
@@ -65,16 +66,99 @@ public class KMeansClustering extends Clustering{
      * @param centroids
      */
     private void printCentroids(CentroidDocument[] centroids) {
+        DecimalFormat df = new DecimalFormat();
+        df.setMaximumFractionDigits(2);
         for(int i=0; i<centroids.length; i++) {
             CentroidDocument cd = centroids[i];
             System.out.println("Centroid # " + i);
             LinkedList<Map.Entry<String, Double>> topTFTerms = cd.getTopTermsTFIDF(10000);
+            double sum = 0.0;
             for(Map.Entry<String, Double> e: topTFTerms) {
-                System.out.print(e.getKey() + " (" + e.getValue() + ")");
+                sum += e.getValue() * e.getValue();
             }
+            for(Map.Entry<String, Double> e: topTFTerms) {
+                System.out.println(e.getKey() + " :" + df.format(e.getValue() / sum) + "");
+
+            }
+
+
+
             System.out.println();
         }
 
+    }
+
+    /**
+     * 7/1/2014
+     * The only difference between this method and clusterRun is that it takes additional paramter, signature list, and use a different cosine similarity with signature.
+     * @param maxIteration
+     * @param rssThreshold
+     * @param signature
+     * @return
+     * @throws IOException
+     */
+    public LinkedList<LinkedList<Document>> clusterRunWithSignatureVector(int maxIteration, double rssThreshold, LinkedList<String> signature) throws IOException {
+        CentroidDocument[] centroids = initCentroid();
+        double curRSS = 0.0, prevRSS = 0.0;
+        int[] aa = new int[5];
+        LinkedList<LinkedList<Document>> clusterAssignments = null;
+        Collection<Document> collection =  dc.getDocumentSet().values();
+        for (int k = 0; k < maxIteration; k++) {
+            System.out.println("************* Iteration " + k + " *************");
+            clusterAssignments = new LinkedList<LinkedList<Document>>();
+            //initialize the cluster assignments
+            for (int i = 0; i < centroids.length; i++) {
+                clusterAssignments.add(new LinkedList<Document>());
+            }
+            // assign a document to each cluster that has the highest cosine similarity
+            for (Document d : collection) {
+                double maxScore = 0.0;
+                int bestClusterIdx = -1;
+                for (int i = 0; i < centroids.length; i++) {
+                    double score = CosineSimilarity.TFIDFCosineSimilarityForSignature(d, centroids[i], signature);
+                    if (score > maxScore) {
+                        maxScore = score;
+                        bestClusterIdx = i;
+                    }
+                    //            System.out.println(score);
+                }
+                if (bestClusterIdx > 0) clusterAssignments.get(bestClusterIdx).add(d);
+            }
+            // update the centroid vector values by the means of the assigned documents
+            for (int i = 0; i < centroids.length; i++) {
+                CentroidDocument centroid = centroids[i];
+                centroid.updateNewCentroid(clusterAssignments.get(i), CentroidDocument.TFIDFVECTOR);
+                centroids[i] = centroid;
+            }
+            /**
+             * compute RSS for termination condition
+             */
+            prevRSS = curRSS;
+            curRSS = 0.0;
+            for (int i = 0; i < centroids.length; i++) {
+                curRSS += computeRSS(clusterAssignments.get(i));
+            }
+            System.out.println("RSS : " + curRSS);
+            if (Math.abs(curRSS / prevRSS) < rssThreshold) {
+                System.out.println("current threshold: " + Math.abs(curRSS / prevRSS));
+                break;
+            }
+
+  /*          for(int i=0; i< centroids.length; i++) {
+                System.out.print(topiclist.get(i) + ": \t");
+                LinkedList<Document> cluster = clusterAssignments.get(i);
+                for (Document d : cluster) {
+                    System.out.print(d.getName() + "\t");
+                }
+                System.out.println();
+            }
+
+   */
+
+        }
+  //      printCentroids(centroids);
+
+        return clusterAssignments;
     }
 
     public  LinkedList<LinkedList<Document>> clusterRun(int maxIteration, double rssThreshold) throws IOException {
@@ -100,9 +184,10 @@ public class KMeansClustering extends Clustering{
                         maxScore = score;
                         bestClusterIdx = i;
                     }
-                    //            System.out.println(score);
+       //             System.out.println(d.getName() + " vs " + i + ": " + score);
+       //                        System.out.println(score);
                 }
-                if (bestClusterIdx > 0) clusterAssignments.get(bestClusterIdx).add(d);
+                if (bestClusterIdx >= 0) clusterAssignments.get(bestClusterIdx).add(d);
             }
             // update the centroid vector values by the means of the assigned documents
             for (int i = 0; i < centroids.length; i++) {
