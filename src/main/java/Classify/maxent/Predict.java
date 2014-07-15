@@ -18,6 +18,8 @@ package Classify.maxent;////////////////////////////////////////////////////////
 
 import java.io.File;
 import java.io.FileReader;
+import java.io.IOException;
+import java.util.ArrayList;
 
 import opennlp.maxent.BasicContextGenerator;
 import opennlp.maxent.ContextGenerator;
@@ -26,6 +28,7 @@ import opennlp.maxent.PlainTextByLineDataStream;
 import opennlp.model.GenericModelReader;
 import opennlp.model.MaxentModel;
 import opennlp.model.RealValueFileEventStream;
+import simple.io.myungha.SimpleFileReader;
 
 /**
  * Test the model on some input.
@@ -45,7 +48,7 @@ public class Predict {
       eval(predicates,false);
     }
     
-    private void eval (String predicates, boolean real) {
+    private String eval (String predicates, boolean real) {
       String[] contexts = predicates.split(" ");
       double[] ocs;
       if (!real) {
@@ -54,8 +57,10 @@ public class Predict {
       else {
         float[] values = RealValueFileEventStream.parseContexts(contexts);
         ocs = _model.eval(contexts,values);
+
       }
-      System.out.println("For context: " + predicates+ "\n" + _model.getBestOutcome(ocs) + "\n");
+//      System.out.println("For context: " + predicates+ "\n" + _model.getBestOutcome(ocs) + "\n");
+       return _model.getBestOutcome(ocs);
 	
     }
     
@@ -68,72 +73,51 @@ public class Predict {
      * <p>
      * java Predict dataFile (modelFile)
      */
-    public static void main(String[] args) {
-	String dataFileName, modelFileName;
-    boolean real = false;
-    String type = "maxent";
-    int ai = 0;
-    dataFileName = "/Users/mhjang/Downloads/opennlp-maxent-3.0.0/samples/sports/football.test";
-    modelFileName = "/Users/mhjang/Downloads/opennlp-maxent-3.0.0/samples/sports/footballModel.txt";
+    public static void main(String[] args) throws IOException {
+        String dataFileName, modelFileName, truthFileName;
+        boolean real = false;
+        String type = "maxent";
+        int ai = 0;
+        for (int i = 0; i < 5; i++) {
+            dataFileName = "/Users/mhjang/Documents/workspace/TeachingDocClustering/test_" + i + ".txt";
+            modelFileName = "/Users/mhjang/Documents/workspace/TeachingDocClustering/training_" + i + "Model.txt";
+            truthFileName = dataFileName.substring(0, dataFileName.lastIndexOf(".")) + "_answers.txt";
+            SimpleFileReader sr = new SimpleFileReader(truthFileName);
+            ArrayList<String> truthData = new ArrayList<String>();
+            String answer;
+            while (sr.hasMoreLines()) {
+                answer = sr.readLine();
+                truthData.add(answer);
+            }
+            Predict predictor = null;
+            try {
+                MaxentModel m = new GenericModelReader(new File(modelFileName)).getModel();
+                predictor = new Predict(m);
+            } catch (Exception e) {
+                e.printStackTrace();
+                System.exit(0);
+            }
+            int k = 0, correct = 0, wrong = 0;
+            try {
+                DataStream ds =
+                        new PlainTextByLineDataStream(
+                                new FileReader(new File(dataFileName)));
 
-/*	if (args.length > 0) {
-      while (args[ai].startsWith("-")) {
-        if (args[ai].equals("-real")) {
-          real = true;
-        }
-        else if (args[ai].equals("-perceptron")) {
-          type = "perceptron";
-        }
-        else {
-          usage();
-        }
-        ai++;
-      }      
-      dataFileName = args[ai++];
-      if (args.length > ai) { 
-        modelFileName = args[ai++];
-      }
-      else {
-          modelFileName = dataFileName.substring(0,dataFileName.lastIndexOf('.')) + "Model.txt";
-      }
-	}
-	else {
-	    dataFileName = "";
-	    modelFileName = "weatherModel.txt";
-	}
-*/
-	Predict predictor = null;
-	try {
-      MaxentModel m = new GenericModelReader(new File(modelFileName)).getModel();
-	  predictor = new Predict(m);
-	} catch (Exception e) {
-	    e.printStackTrace();
-	    System.exit(0);
-	}
+                while (ds.hasNext()) {
+                    String s = (String) ds.nextToken();
+                    String prediction = predictor.eval(s.substring(0, s.lastIndexOf(' ')), real);
+                    if (prediction.equals(truthData.get((k++))))
+                        correct++;
+                    else
+                        wrong++;
+                }
+                System.out.println(correct + "\t" + wrong + "\t" + (double) (correct) / (double) (wrong + correct));
+            } catch (Exception e) {
+                System.out.println("Unable to read from specified file: " + modelFileName);
+                System.out.println();
+                e.printStackTrace();
+            }
 
-	if (dataFileName.equals("")) {
-	    predictor.eval("Rainy Happy Humid");
-	    predictor.eval("Rainy");
-	    predictor.eval("Blarmey");
-	}
-	else {
-	    try {
-		DataStream ds =
-		    new PlainTextByLineDataStream(
-			new FileReader(new File(dataFileName)));
-
-		while (ds.hasNext()) {
-		    String s = (String)ds.nextToken();
-		    predictor.eval(s.substring(0, s.lastIndexOf(' ')),real);
-		}
-		return;
-	    }
-	    catch (Exception e) {
-	      System.out.println("Unable to read from specified file: "+modelFileName);
-	      System.out.println();
-	      e.printStackTrace();
-	    }
-	}
+        }
     }
-    
 }

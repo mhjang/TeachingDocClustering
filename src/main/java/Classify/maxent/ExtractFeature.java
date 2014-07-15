@@ -147,6 +147,10 @@ public class ExtractFeature {
 
     public void convertToMaxentFormat(LinkedList<String> context, LinkedList<LinkedList<String>> features, boolean isTraining, String filename) throws IOException {
         SimpleFileWriter sw = new SimpleFileWriter(filename);
+        SimpleFileWriter sw2 = null;
+        if(!isTraining)
+            sw2 = new SimpleFileWriter(filename.substring(0,filename.lastIndexOf('.')) + "_answers.txt");
+
         for(LinkedList<String> flist : features) {
             int i=0;
             for(i=0; i<flist.size()-1; i++) {
@@ -154,10 +158,15 @@ public class ExtractFeature {
    //             System.out.print(context.get(i) + ":" + flist.get(i) + " ");
             }
             if(isTraining) sw.write(TagConstant.getTagLabelByComponent(Integer.parseInt(flist.get(i))));
-            else sw.write("?");
+            else {
+                sw.write("?");
+                sw2.writeLine(TagConstant.getTagLabelByComponent(Integer.parseInt(flist.get(i))));
+            }
             sw.write("\n");
   //          System.out.println();
         }
+        sw.close();
+        if(!isTraining) sw2.close();
     }
 
     int getFeatureIndex(String word) {
@@ -317,7 +326,7 @@ public class ExtractFeature {
                 int treeIdx = 0;
                 String line;
                 SimpleFileReader freader = new SimpleFileReader(baseDir + "annotation/" + filename);
-           //          System.out.println("loading " + filename);
+                System.out.println("loading " + filename);
 
                 boolean isTagBeginLine = false, tagClosed = false;
                 String endTag = null;

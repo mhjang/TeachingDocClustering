@@ -40,15 +40,26 @@ public class FiveFoldDataSplit {
                     LinkedList<String> training = new LinkedList<String>();
                     LinkedList<String> test = new LinkedList<String>();
                     for(int j=0; j<5; j++) {
-                        if(j != i)
+                        if (j != i)
                             training.addAll(partitions.get(j));
                         else
                             test.addAll(partitions.get(j));
-                        trainingSet.add(training);
-                        testSet.add(test);
                     }
+                    trainingSet.add(training);
+                    testSet.add(test);
+
                 }
 
+            // test print
+            /*
+            for(int i = 0; i<5; i++) {
+                System.out.println("training set");
+                System.out.println(trainingSet.get(i));
+                System.out.println("test set");
+                System.out.println(testSet.get(i));
+
+            }
+            */
 
             return new AbstractMap.SimpleEntry<LinkedList<LinkedList<String>>, LinkedList<LinkedList<String>>>(trainingSet, testSet);
 

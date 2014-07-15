@@ -49,77 +49,55 @@ public class CreateModel {
     public static boolean USE_SMOOTHING = false;
     public static double SMOOTHING_OBSERVATION = 0.1;
     
-    private static void usage() {
-      System.err.println("java CreateModel [-real] dataFile");
-      System.exit(1);
-    }
-    
+
     /**
      * Main method. Call as follows:
      * <p>
      * java CreateModel dataFile
      */
     public static void main (String[] args) {
-      int ai = 0;
-      boolean real = false;
-      String type = "maxent";
-      if(args.length == 0) {
-        usage();
-      }
-      while (args[ai].startsWith("-")) {
-        if (args[ai].equals("-real")) {
-          real = true;
-        }
-        else if (args[ai].equals("-perceptron")) {
-          type = "perceptron";
-        }
-        else {
-          System.err.println("Unknown option: "+args[ai]);
-          usage();
-        }
-        ai++;
-      }
-      String dataFileName = new String(args[ai]);
-      String modelFileName =
-        dataFileName.substring(0,dataFileName.lastIndexOf('.'))
-        + "Model.txt";
-      try {
-        FileReader datafr = new FileReader(new File(dataFileName));
-        EventStream es;
-        if (!real) { 
-          es = new BasicEventStream(new PlainTextByLineDataStream(datafr));
-        }
-        else {
-          es = new RealBasicEventStream(new PlainTextByLineDataStream(datafr));
-        }
-        GIS.SMOOTHING_OBSERVATION = SMOOTHING_OBSERVATION;
-        AbstractModel model;
-        if (type.equals("maxent")) {
-        
-          if (!real) {
-            model = GIS.trainModel(es,USE_SMOOTHING);
-          }
-          else {
-            model = GIS.trainModel(100, new OnePassRealValueDataIndexer(es,0), USE_SMOOTHING);
-          }
-        }
-        else if (type.equals("perceptron")){ 
-          System.err.println("Perceptron training");
-          model = new PerceptronTrainer().trainModel(10, new OnePassDataIndexer(es,0),0);
-        }
-        else {
-          System.err.println("Unknown model type: "+type);
-          model = null;
-        }
-        
-        File outputFile = new File(modelFileName);
-        GISModelWriter writer =  new SuffixSensitiveGISModelWriter(model, outputFile);
-        writer.persist();
-      } catch (Exception e) {
-        System.out.print("Unable to create model due to exception: ");
-        System.out.println(e);
-        e.printStackTrace();
-      }
-    }
+        int ai = 0;
+        boolean real = false;
+        String type = "maxent";
 
+        for (int i = 0; i < 5; i++) {
+            String dataFileName = "/Users/mhjang/Documents/workspace/TeachingDocClustering/training_" + i + ".txt";
+            String modelFileName =
+                    dataFileName.substring(0, dataFileName.lastIndexOf('.'))
+                            + "Model.txt";
+            try {
+                FileReader datafr = new FileReader(new File(dataFileName));
+                EventStream es;
+                if (!real) {
+                    es = new BasicEventStream(new PlainTextByLineDataStream(datafr));
+                } else {
+                    es = new RealBasicEventStream(new PlainTextByLineDataStream(datafr));
+                }
+                GIS.SMOOTHING_OBSERVATION = SMOOTHING_OBSERVATION;
+                AbstractModel model;
+                if (type.equals("maxent")) {
+
+                    if (!real) {
+                        model = GIS.trainModel(es, USE_SMOOTHING);
+                    } else {
+                        model = GIS.trainModel(100, new OnePassRealValueDataIndexer(es, 0), USE_SMOOTHING);
+                    }
+                } else if (type.equals("perceptron")) {
+                    System.err.println("Perceptron training");
+                    model = new PerceptronTrainer().trainModel(10, new OnePassDataIndexer(es, 0), 0);
+                } else {
+                    System.err.println("Unknown model type: " + type);
+                    model = null;
+                }
+
+                File outputFile = new File(modelFileName);
+                GISModelWriter writer = new SuffixSensitiveGISModelWriter(model, outputFile);
+                writer.persist();
+            } catch (Exception e) {
+                System.out.print("Unable to create model due to exception: ");
+                System.out.println(e);
+                e.printStackTrace();
+            }
+        }
+    }
 }
