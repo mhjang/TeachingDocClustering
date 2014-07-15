@@ -75,7 +75,7 @@ public class ExtractFeature {
 
     static int maxDependents = 5;
 
-    LinkedList<LinkedList<String>> featureList = new LinkedList<LinkedList<String>>();
+    LinkedList<LinkedList<String>> featureList;
 
     static class Component {
         public int begin, intermediate, end;
@@ -132,8 +132,10 @@ public class ExtractFeature {
         LinkedList<LinkedList<String>> trainingSet = fivefolds.getKey();
         LinkedList<LinkedList<String>> testSet = fivefolds.getValue();
         for(int i=0; i<5; i++) {
+            System.out.println("training");
             ef.convertToMaxentFormat(ef.getContext(), ef.generateClassifyFeatures(baseDir, trainingSet.get(i)), true, "training_" + i + ".txt");
-            ef.convertToMaxentFormat(ef.getContext(), ef.generateClassifyFeatures(baseDir, trainingSet.get(i)), false, "test_" + i + ".txt");
+            System.out.println("test");
+            ef.convertToMaxentFormat(ef.getContext(), ef.generateClassifyFeatures(baseDir, testSet.get(i)), false, "test_" + i + ".txt");
             System.out.println("Training/Test set run " + (i+1));
         }
     }
@@ -294,6 +296,9 @@ public class ExtractFeature {
         //     read all annotated files from the directory
         //     String directory = "/Users/mhjang/Desktop/clearnlp/trainingdata/annotation/";
         // baseDir = "/Users/mhjang/Desktop/clearnlp/allslides/";
+        // initialize the global variable featurelist
+        featureList = new LinkedList<LinkedList<String>>();
+
         String parsedDir = baseDir + "parsed/";
         try {
             for (String filename : data) {
@@ -312,7 +317,7 @@ public class ExtractFeature {
                 int treeIdx = 0;
                 String line;
                 SimpleFileReader freader = new SimpleFileReader(baseDir + "annotation/" + filename);
-                //     System.out.println("loading " + filename);
+           //          System.out.println("loading " + filename);
 
                 boolean isTagBeginLine = false, tagClosed = false;
                 String endTag = null;

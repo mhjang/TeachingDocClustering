@@ -41,13 +41,15 @@ public class FiveFoldDataSplit {
                     LinkedList<String> test = new LinkedList<String>();
                     for(int j=0; j<5; j++) {
                         if(j != i)
-                            training.addAll(partitions.get(i));
+                            training.addAll(partitions.get(j));
                         else
-                            test.addAll(partitions.get(i));
+                            test.addAll(partitions.get(j));
                         trainingSet.add(training);
                         testSet.add(test);
                     }
                 }
+
+
             return new AbstractMap.SimpleEntry<LinkedList<LinkedList<String>>, LinkedList<LinkedList<String>>>(trainingSet, testSet);
 
         }
