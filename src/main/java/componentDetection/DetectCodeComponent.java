@@ -2,6 +2,7 @@ package componentDetection;
 
 import java.io.*;
 import java.util.StringTokenizer;
+import java.util.regex.Pattern;
 
 /** 
  * 
@@ -19,7 +20,13 @@ import java.util.StringTokenizer;
  */
 
 public class DetectCodeComponent {
-	public static void main(String[] args) throws Exception {
+
+    static Pattern copyrightPattern = Pattern.compile("[\\w-]+\\@([\\w-]+\\.)+[\\w-]+");
+    static Pattern parenthesisPattern = Pattern.compile("\\w*\\[\\w*\\]");
+    static Pattern bracketPattern =  Pattern.compile("\\w*\\(\\)");
+    static Pattern camalCasePattern = Pattern.compile("[a-z]+[A-Z][a-z]+");
+    static Pattern underscorePattern = Pattern.compile("\\w+\\_\\w+");
+    public static void main(String[] args) throws Exception {
         // the original directory that contains files whose codes shall be removed
 		String dir = "/Users/mhjang/Documents/teaching_documents/extracted/stemmed/";
         // the new directory that saves files after removing the code lines
@@ -71,16 +78,8 @@ public class DetectCodeComponent {
 	//		System.out.println("copyright: " + line);
 			return true;
 		}
-		StringTokenizer st = new StringTokenizer(line);
-		while(st.hasMoreTokens()) {
-			String token = st.nextToken();
-			if(token.matches("[\\w-]+\\@([\\w-]+\\.)+[\\w-]+")) {
-	//			System.out.println("email: " + line);
-				return true; 
-			}
-		}
-		return false;
-		
+        if(copyrightPattern.matcher(line).find()) return true;
+         else return false;
 	}
 
 
@@ -94,14 +93,14 @@ public class DetectCodeComponent {
 	}
 
     public static boolean isParenthesis(String token) {
-		if(token.matches("\\w*\\[\\w*\\]")) {
+		if(parenthesisPattern.matcher(token).find()) {
 				return true;
 			}
 		return false;
 	}
 
     public static boolean isBracket(String token) {
-        if(token.matches("\\w*\\(\\)")) {
+        if(bracketPattern.matcher(token).find()) {
             return true;
         }
 		 return false; 
@@ -116,29 +115,20 @@ public class DetectCodeComponent {
 
     public static boolean isOperator(String line) {
 		String[] operators = {"+", "&&", "||", "<", ">", "==", "!=", ">=", "<=", ">>", "<<", "::", "__", "</"};
-		StringTokenizer st = new StringTokenizer(line);
-		while(st.hasMoreTokens()) {
-			String token = st.nextToken();
-			for(int i=0; i<operators.length; i++) {
-				if(token.contains(operators[i])) {
-	//				System.out.println("operator: " + line);
-					return true;
-				}
-			}
-		}
-		return false; 
+		for(int i=0; i<operators.length; i++) {
+            if(line.contains(operators[i]))
+                return true;
+        }
+        return false;
 	}
 
     public static boolean isVariable(String token) {
             // check if the variable is a camal case
-			if(token.matches("[a-z]+[A-Z][a-z]+")) {
+            if(camalCasePattern.matcher(token).find())
 				return true;
-			}
-            // or two strings concatenated by an underscore
-			else if(token.matches("\\w+\\_\\w+")) {
-				return true;
-			}
-		
+			// or two strings concatenated by an underscore
+			else if(underscorePattern.matcher(token).find())
+                return true;
 			return false;
 	}
 }

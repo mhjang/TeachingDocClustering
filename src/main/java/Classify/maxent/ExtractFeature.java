@@ -4,6 +4,7 @@ package Classify.maxent;
  * Created by mhjang on 7/9/14.
  */
 
+import Classify.FiveFoldDataSplit;
 import Classify.StringTokenizerIndx;
 import Classify.TagConstant;
 import com.clearnlp.dependency.DEPArc;
@@ -126,63 +127,32 @@ public class ExtractFeature {
         String allParsingDir = baseDir + "parsed/";
 
         DirectoryReader dr = new DirectoryReader(allAnnotationDir);
-        ef.convertToMaxentFormat(ef.getContext(), ef.generateClassifyFeatures(baseDir, dr.getFileNameList()));
+//        ef.convertToMaxentFormat(ef.getContext(), ef.generateClassifyFeatures(baseDir, dr.getFileNameList()));
+        Map.Entry<LinkedList<LinkedList<String>>, LinkedList<LinkedList<String>>> fivefolds = FiveFoldDataSplit.getFiveFoldSet(allAnnotationDir, true);
+        LinkedList<LinkedList<String>> trainingSet = fivefolds.getKey();
+        LinkedList<LinkedList<String>> testSet = fivefolds.getValue();
+        for(int i=0; i<5; i++) {
+            ef.convertToMaxentFormat(ef.getContext(), ef.generateClassifyFeatures(baseDir, trainingSet.get(i)), true, "training_" + i + ".txt");
+            ef.convertToMaxentFormat(ef.getContext(), ef.generateClassifyFeatures(baseDir, trainingSet.get(i)), false, "test_" + i + ".txt");
+
+        }
     }
 
     public LinkedList<LinkedList<String>> getFeatures() {
         return featureList;
     }
 
-    /**
-     *
-     * @param dir: directory that contains all annotation files
-     * @param isBasedFiles true: divide by FILES, false: divide by LINES
-     */
-    public void fivefoldCrossValidation(String dir, boolean isBasedFiles) {
-         if(isBasedFiles) {
-             DirectoryReader dr = new DirectoryReader(dir);
-             ArrayList<String> filenames = dr.getFileNameList();
-             int size = filenames.size();
-             int unit = size / 5;
-             // partitioning
-             ArrayList<ArrayList<String>> partitions = new ArrayList<ArrayList<String>>();
-             for(int i=1; i<=5; i++) {
-                 if(i<5)
-                     partitions.add(new ArrayList<String>(filenames.subList((i-1)*unit, i*unit)));
-                 else
-                     partitions.add(new ArrayList<String>(filenames.subList((i-1)*unit, filenames.size()-1)));
-             }
-             // assembling folds
-             LinkedList<ArrayList<String>> trainingSet = new LinkedList<ArrayList<String>>();
-             LinkedList<ArrayList<String>> testSet = new LinkedList<ArrayList<String>>();
-             ArrayList<String> training = new ArrayList<String>();
-             ArrayList<String> test = new ArrayList<String>();
 
-             for(int i = 0; i<5; i++) {
-                for(int j=0; j<5; j++) {
-                    if(j != i)
-                        training.addAll(partitions.get(i));
-                    else
-                        test = partitions.get(i);
-                    trainingSet.add(training);
-                    testSet.add(test);
-                }
-            }
-
-
-
-         }
-    }
-
-    public void convertToMaxentFormat(LinkedList<String> context, LinkedList<LinkedList<String>> features) throws IOException {
-        SimpleFileWriter sw = new SimpleFileWriter("maxent_features.txt");
+    public void convertToMaxentFormat(LinkedList<String> context, LinkedList<LinkedList<String>> features, boolean isTraining, String filename) throws IOException {
+        SimpleFileWriter sw = new SimpleFileWriter(filename);
         for(LinkedList<String> flist : features) {
             int i=0;
             for(i=0; i<flist.size()-1; i++) {
                 sw.write(context.get(i) + ":" + flist.get(i) +" ");
    //             System.out.print(context.get(i) + ":" + flist.get(i) + " ");
             }
-            sw.write(TagConstant.getTagLabelByComponent(Integer.parseInt(flist.get(i))));
+            if(isTraining) sw.write(TagConstant.getTagLabelByComponent(Integer.parseInt(flist.get(i))));
+            else sw.write("?");
             sw.write("\n");
   //          System.out.println();
         }
@@ -320,7 +290,7 @@ public class ExtractFeature {
      * @return
      * @throws java.io.IOException
      */
-    public LinkedList<LinkedList<String>> generateClassifyFeatures(String baseDir, ArrayList<String> data) throws IOException {
+    public LinkedList<LinkedList<String>> generateClassifyFeatures(String baseDir, LinkedList<String> data) throws IOException {
         //     read all annotated files from the directory
         //     String directory = "/Users/mhjang/Desktop/clearnlp/trainingdata/annotation/";
         // baseDir = "/Users/mhjang/Desktop/clearnlp/allslides/";
