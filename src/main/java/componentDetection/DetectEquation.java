@@ -13,19 +13,17 @@ public class DetectEquation {
         String[] tokens = line.split(" ");
         for(int i=0; i<tokens.length; i++) {
             boolean codeMatch = false;
-            if(numberPattern.matcher(tokens[i]).find()) codeMatch = true;
+            if(numberPattern.matcher(tokens[i]).find()) return true;
             else if(tokens[i].length()==1) {
                 Character.UnicodeBlock code = Character.UnicodeBlock.of(tokens[i].charAt(0));
                 for(int k=0; k<codeset.length; k++) {
                     if(code == codeset[k]) {
-                        codeMatch = true;
-                        break;
+                        return true;
                     }
                 }
             }
-            if(codeMatch == false) return false;
         }
-        return true;
+        return false;
     }
 
 }

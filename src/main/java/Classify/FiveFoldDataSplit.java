@@ -34,10 +34,11 @@ public class FiveFoldDataSplit {
                 // assembling folds
                 LinkedList<LinkedList<String>> trainingSet = new LinkedList<LinkedList<String>>();
                 LinkedList<LinkedList<String>> testSet = new LinkedList<LinkedList<String>>();
-                LinkedList<String> training = new LinkedList<String>();
-                LinkedList<String> test = new LinkedList<String>();
+
 
                 for(int i = 0; i<5; i++) {
+                    LinkedList<String> training = new LinkedList<String>();
+                    LinkedList<String> test = new LinkedList<String>();
                     for(int j=0; j<5; j++) {
                         if(j != i)
                             training.addAll(partitions.get(i));

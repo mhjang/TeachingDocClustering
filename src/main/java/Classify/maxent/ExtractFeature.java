@@ -134,7 +134,7 @@ public class ExtractFeature {
         for(int i=0; i<5; i++) {
             ef.convertToMaxentFormat(ef.getContext(), ef.generateClassifyFeatures(baseDir, trainingSet.get(i)), true, "training_" + i + ".txt");
             ef.convertToMaxentFormat(ef.getContext(), ef.generateClassifyFeatures(baseDir, trainingSet.get(i)), false, "test_" + i + ".txt");
-
+            System.out.println("Training/Test set run " + (i+1));
         }
     }
 
@@ -406,11 +406,12 @@ public class ExtractFeature {
                     }
 
                 }
-                for(int i=0; i<5; i++) {
+ /*               for(int i=0; i<5; i++) {
                     System.out.print(((double)componentCount[i] / (double)numOfTokensInDoc) + "\t");
                 }
                 System.out.println(numOfTokensInDoc);
                 //     System.out.println();
+ */
             }
 
         } catch (Exception e) {
