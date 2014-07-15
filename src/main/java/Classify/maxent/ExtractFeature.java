@@ -144,9 +144,31 @@ public class ExtractFeature {
              ArrayList<String> filenames = dr.getFileNameList();
              int size = filenames.size();
              int unit = size / 5;
+             // partitioning
+             ArrayList<ArrayList<String>> partitions = new ArrayList<ArrayList<String>>();
              for(int i=1; i<=5; i++) {
-                 
+                 if(i<5)
+                     partitions.add(new ArrayList<String>(filenames.subList((i-1)*unit, i*unit)));
+                 else
+                     partitions.add(new ArrayList<String>(filenames.subList((i-1)*unit, filenames.size()-1)));
              }
+             // assembling folds
+             LinkedList<ArrayList<String>> trainingSet = new LinkedList<ArrayList<String>>();
+             LinkedList<ArrayList<String>> testSet = new LinkedList<ArrayList<String>>();
+             ArrayList<String> training = new ArrayList<String>();
+             ArrayList<String> test = new ArrayList<String>();
+
+             for(int i = 0; i<5; i++) {
+                for(int j=0; j<5; j++) {
+                    if(j != i)
+                        training.addAll(partitions.get(i));
+                    else
+                        test = partitions.get(i);
+                    trainingSet.add(training);
+                    testSet.add(test);
+                }
+            }
+
 
 
          }
