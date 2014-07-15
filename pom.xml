@@ -35,6 +35,12 @@
         </dependency>
 
         <dependency>
+            <groupId>org.apache.opennlp</groupId>
+            <artifactId>opennlp-maxent</artifactId>
+            <version>3.0.3</version>
+        </dependency>
+
+        <dependency>
             <groupId>de.bwaldvogel</groupId>
             <artifactId>liblinear</artifactId>
             <version>1.94</version>
