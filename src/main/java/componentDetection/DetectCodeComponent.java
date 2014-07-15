@@ -20,7 +20,9 @@ import java.util.StringTokenizer;
 
 public class DetectCodeComponent {
 	public static void main(String[] args) throws Exception {
+        // the original directory that contains files whose codes shall be removed
 		String dir = "/Users/mhjang/Documents/teaching_documents/extracted/stemmed/";
+        // the new directory that saves files after removing the code lines
 		String cDir = "/Users/mhjang/Documents/teaching_documents/coderm/";
 		String line;
 		File folder = new File(dir);
@@ -47,6 +49,8 @@ public class DetectCodeComponent {
 		}
         System.out.println(count + " lines of codes are removed!");
 	}
+
+    // return true if at least one of the token in the line has a true property of one of the rules
     public static boolean isCodeLine(String line) {
         String[] tokens = line.split(" ");
         for(int i=0; i<tokens.length; i++) {
@@ -58,7 +62,7 @@ public class DetectCodeComponent {
 
     }
 	/**
-	 * I know this is pretty heuristic, but this copy right stuff is in everywhere -- contributing to a fair amount of noises
+	 * This is pretty heuristic, but this copyright statements are pretty ubiquitous in teaching documents, contributing to a fair amount of noises
 	 * @param line
 	 * @return
 	 */
@@ -84,15 +88,13 @@ public class DetectCodeComponent {
         if(token.isEmpty()) return false;
         char lastChar = token.charAt(token.length()-1);
 		if(lastChar == ';') {
-	//		System.out.println("Semicolon: " + line);
-			return true; 
+			return true;
 		}
 		else return false; 
 	}
 
     public static boolean isParenthesis(String token) {
 		if(token.matches("\\w*\\[\\w*\\]")) {
-	//			System.out.println("Parenthesis: " + line);
 				return true;
 			}
 		return false;
@@ -100,7 +102,6 @@ public class DetectCodeComponent {
 
     public static boolean isBracket(String token) {
         if(token.matches("\\w*\\(\\)")) {
-//				System.out.println("bracket: " + line);
             return true;
         }
 		 return false; 
@@ -129,12 +130,12 @@ public class DetectCodeComponent {
 	}
 
     public static boolean isVariable(String token) {
+            // check if the variable is a camal case
 			if(token.matches("[a-z]+[A-Z][a-z]+")) {
-	//			System.out.println("camelcase: " + line);
 				return true;
 			}
+            // or two strings concatenated by an underscore
 			else if(token.matches("\\w+\\_\\w+")) {
-	//			System.out.println("variable:" + line);
 				return true;
 			}
 		

@@ -36,6 +36,56 @@ public class ClusteringFMeasure {
     }
 
 
+    public void errorAnalysis(HashMap<String, LinkedList<String>> oldCluster, HashMap<String, LinkedList<String>> newCluster) {
+        for(String doc : oldCluster.keySet()) {
+            int correctDropped = 0, correctIntroduced = 0, wrongDropped = 0, wrongIntroduced = 0;
+            LinkedList<String> oldClusterList = oldCluster.get(doc);
+            LinkedList<String> newClusterList = newCluster.get(doc);
+
+            // remove duplicate items
+            LinkedList<String> duplicateItems = new LinkedList<String>();
+            for(String clusterItem : oldClusterList) {
+                if(newClusterList.contains(clusterItem)) {
+                    duplicateItems.add(clusterItem);
+                }
+            }
+            for(String duplicateItem : duplicateItems) {
+                oldClusterList.remove(duplicateItem);
+                newClusterList.remove(duplicateItem);
+            }
+            HashSet<String> goldItems = goldClusters.get(clusterLabelMap.get(doc));
+            System.out.println(doc);
+            for(String item : oldClusterList) {
+                System.out.print(item + " ");
+                if(goldItems.contains(item)) {
+                    correctDropped++;
+                    System.out.print("(CD) ");
+                }
+                else {
+                    wrongDropped++;
+                    System.out.print("(WD) ");
+
+                }
+            }
+
+            for(String item : newClusterList) {
+                System.out.print(item + " ");
+                if(goldItems.contains(item)) {
+                    correctIntroduced++;
+                    System.out.print("(CI) ");
+
+                }
+                else {
+                    wrongIntroduced++;
+                    System.out.print("(WI) ");
+                }
+            }
+            System.out.println();
+            System.out.println(correctDropped + "\t" + correctIntroduced + "\t" + wrongDropped + "\t" + wrongIntroduced);
+        }
+    }
+
+
     // read goldstandard
     public  HashMap<Integer, HashSet<String>> readGoldstandard(String goldDir) {
         HashMap<Integer, HashSet<String>> goldstandard = null;

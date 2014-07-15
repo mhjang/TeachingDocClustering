@@ -1,11 +1,12 @@
-package Classify;
+package Classify.liblinear;
 
+import Classify.StringTokenizerIndx;
+import Classify.TagConstant;
 import com.clearnlp.dependency.DEPArc;
 import com.clearnlp.dependency.DEPNode;
 import com.clearnlp.dependency.DEPTree;
 import com.clearnlp.reader.DEPReader;
 import com.clearnlp.util.UTInput;
-import com.drew.metadata.Directory;
 import componentDetection.DetectCodeComponent;
 import componentDetection.DetectEquation;
 import componentDetection.DetectTable;
@@ -123,19 +124,19 @@ public class ExtractFeature {
 
         ExtractFeature ef = new ExtractFeature();
 //       apply the classifer to the other documents
-        ef.generateCodeRemovedDocuments();
+//        ef.generateCodeRemovedDocuments();
 //        ef.prepareFeatureForDocuments();
 
-/*        String baseDir = "/Users/mhjang/Desktop/clearnlp/allslides/";
+        String baseDir = "/Users/mhjang/Desktop/clearnlp/allslides/";
         String allAnnotationDir = baseDir + "annotation/";
         String allParsingDir = baseDir + "parsed/";
 
         DirectoryReader dr = new DirectoryReader(allAnnotationDir);
 
 
-        LinkedList<Feature[]> allFeatures = ef.generateClassifyFeatures(baseDir, dr.getFileNameList());
+        ef.generateClassifyFeatures(baseDir, dr.getFileNameList());
         // Generate a problem with trainng set features
-        Feature[][] allFeaturesArray = new Feature[allFeatures.size()][];
+  /*      Feature[][] allFeaturesArray = new Feature[allFeatures.size()][];
 
         for (int i = 0; i < allFeatures.size(); i++) {
             allFeaturesArray[i] = allFeatures.get(i);
@@ -154,10 +155,10 @@ public class ExtractFeature {
         int correctItem = 0;
 
         Parameter param = new Parameter(SolverType.L2R_L2LOSS_SVC, 10, 0.01);
-  //      Model model = Linear.train(problem, param);
+        Model model = Linear.train(problem, param);
         File modelFile = new File("slide_model_0608");
   //      model.save(modelFile);
-        Model model = Model.load(modelFile);
+   //     Model model = Model.load(modelFile);
 
 
         int[] componentcounts= new int[5];
@@ -353,35 +354,6 @@ public class ExtractFeature {
 
 
 
-
-    public static LinkedList<LinkedList<String>> readCNLPFile(String parsedFile) {
-        DEPReader reader = new DEPReader(0, 1, 2, 3, 4, 5, 6);
-        //	PrintStream fout = UTOutput.createPrintBufferedFileStream(outputFile);
-        LinkedList<LinkedList<String>> parsedSenList = new LinkedList<LinkedList<String>>();
-        try {
-            reader.open(UTInput.createBufferedFileReader(parsedFile));
-            Set<String> set = new HashSet<String>();
-            DEPTree tree;
-            int idx = 0;
-            ArrayList<DEPTree> treelist = new ArrayList<DEPTree>();
-            while ((tree = reader.next()) != null) {
-                treelist.add(tree);
-            }
-            for (DEPTree t : treelist) {
-                LinkedList<String> sentence = new LinkedList<String>();
-                for (int i = 0; i < t.size(); i++) {
-                    DEPNode node = t.get(i);
-                    sentence.add(node.form);
-                }
-                parsedSenList.add(sentence);
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        return parsedSenList;
-    }
-
-
     int getFeatureIndex(String word) {
         if (featureMap.containsKey(word))
             return featureMap.get(word);
@@ -393,12 +365,6 @@ public class ExtractFeature {
         return featureMap.get(word);
     }
 
-    private String findMatchingEndTag(String beginTag) {
-        if(beginTag == TagConstant.tableTag) return TagConstant.tableCloseTag;
-        else if(beginTag == TagConstant.codeTag) return TagConstant.codeCloseTag;
-        else if(beginTag == TagConstant.equTag) return TagConstant.equCloseTag;
-        else return TagConstant.miscCloseTag;
-    }
 
 
     private void generateCodeRemovedDocuments() throws IOException {
@@ -514,12 +480,12 @@ public class ExtractFeature {
      * @return
      * @throws java.io.IOException
      */
-    public LinkedList<Feature[]> generateClassifyFeatures(String baseDir, ArrayList<String> data) throws IOException {
+    public void generateClassifyFeatures(String baseDir, ArrayList<String> data) throws IOException {
         //     read all annotated files from the directory
         //     String directory = "/Users/mhjang/Desktop/clearnlp/trainingdata/annotation/";
         // baseDir = "/Users/mhjang/Desktop/clearnlp/allslides/";
          String parsedDir = baseDir + "parsed/";
-        model = Model.load(modelFile);
+        int maxDependentCandidate = 0, maxDependent = 0;
         try {
             for (String filename : data) {
                 DEPReader reader = new DEPReader(0, 1, 2, 3, 4, 5, 6);
@@ -589,7 +555,7 @@ public class ExtractFeature {
                                (2) Find the matching end tag
                              */
                             if (isTagBeginLine) {
-                                endTag = findMatchingEndTag(initiatedTag);
+                                endTag = TagConstant.findMatchingEndTag(initiatedTag);
                                 startIdx = (line.indexOf(initiatedTag) + initiatedTag.length() + 1 < line.length()) ? line.indexOf(initiatedTag) + initiatedTag.length() + 1 : 0;
                               // because of the tag itself, minus one
                                 beginToken = componentBegin = StringTokenizerIndx.findTokenNthfromIndex(line, startIdx) - 1; // location - (startTag)
@@ -620,7 +586,10 @@ public class ExtractFeature {
                         if (treeIdxSkip) continue;
                   //      System.out.println(treeIdx + ":" + line);
                   //      printTree(treeIdx, treelist.get(treeIdx));
-                        extractFeatureFromTree(componentBegin, componentEnd, treelist.get(treeIdx), initiatedTag, beginToken, endToken, DetectCodeComponent.isCodeLine(line), DetectEquation.isEquation(line), DetectTable.isTable(line));
+                        maxDependentCandidate = extractFeatureFromTree(componentBegin, componentEnd, treelist.get(treeIdx), initiatedTag, beginToken, endToken, DetectCodeComponent.isCodeLine(line), DetectEquation.isEquation(line), DetectTable.isTable(line));
+                        if(maxDependentCandidate > maxDependent)
+                            maxDependent = maxDependentCandidate;
+                  //      System.out.println("max dependent: " + maxDependent);
                         numOfTokensInDoc += treelist.get(treeIdx).size() - 1;
                         if (tagClosed) {
                             initiatedTag = null;
@@ -631,17 +600,17 @@ public class ExtractFeature {
                     }
 
                  }
-                for(int i=0; i<5; i++) {
-                    System.out.print(((double)componentCount[i] / (double)numOfTokensInDoc) + "\t");
-                }
-                System.out.println(numOfTokensInDoc);
+          //      for(int i=0; i<5; i++) {
+          //          System.out.print(((double)componentCount[i] / (double)numOfTokensInDoc) + "\t");
+          //      }
+           //     System.out.println(numOfTokensInDoc);
            //     System.out.println();
               }
 
         } catch (Exception e) {
             e.printStackTrace();
         }
-        return allFeatures;
+        System.out.println("Max dependent: " + maxDependent);
     }
 
     private void printTree(int n, DEPTree tree) {
@@ -664,7 +633,7 @@ public class ExtractFeature {
      *        endTokenIdx: end of the component, not the line.
      *                            * @return
      */
-    private void extractFeatureFromTree(int componentFragBegin, int componentFragEnd, DEPTree tree, String tagType, int beginTokenIdx, int endTokenIdx, boolean isThisLineCode, boolean isThisLineEquation, boolean isThisLineTable) {
+    private int extractFeatureFromTree(int componentFragBegin, int componentFragEnd, DEPTree tree, String tagType, int beginTokenIdx, int endTokenIdx, boolean isThisLineCode, boolean isThisLineEquation, boolean isThisLineTable) {
         int i, size = tree.size(), npSum = 0;
         tree.resetDependents();
         DEPNode node;
@@ -687,10 +656,10 @@ public class ExtractFeature {
         LinkedList<LinkedList<Feature>> featureList = new LinkedList<LinkedList<Feature>>();
         LinkedList<HashSet<Integer>> featureIndexList = new LinkedList<HashSet<Integer>>();
         int featureIndx;
+        int max = 0;
         for (i = 1; i < size; i++) {
             node = tree.get(i);
             List<DEPArc> dependents = node.getDependents();
-
             // check feature index duplicate
             HashSet<Integer> featureIndex = new HashSet<Integer>();
             tokens[i - 1] = node.form;
@@ -932,6 +901,7 @@ public class ExtractFeature {
                     }
                 }
 
+
             }
             /**************************************************
              *      Structural Features                       *
@@ -972,7 +942,7 @@ public class ExtractFeature {
             featureArray = features.toArray(new Feature[features.size()]);
             allFeatures.add(featureArray);
 
-            predictedAnswers[featureIdx] = Linear.predict(model, featureArray);
+//            predictedAnswers[featureIdx] = Linear.predict(model, featureArray);
             //       predictedAnswers[featureIdx] = 0;
             featureIdx++;
 
@@ -1014,7 +984,10 @@ public class ExtractFeature {
 
         }
     }
+        return max;
     }
+
+
 
     private int toIndex(String tagName) {
         if(tagName.equals(TagConstant.tableTag)) return 0;

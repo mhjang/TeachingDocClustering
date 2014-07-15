@@ -32,6 +32,38 @@ public class CosineSimilarity  {
     }
 
     /**
+     * computes cosine similarity between two documents on the given signature terms
+     * @param d1
+     * @param d2
+     * @param signature
+     * @return
+     */
+    public static double TFIDFCosineSimilarityForSignature(Document d1, Document d2, LinkedList<String> signature) {
+        // vectorization
+        int vecLen = signature.size();
+
+        Double[] v1 = new Double[vecLen];
+        Double[] v2 = new Double[vecLen];
+        for(int i=0; i<vecLen; i++) {
+            String label = signature.get(i);
+            v1[i] = d1.getTFIDF(label);
+            v2[i] = d2.getTFIDF(label);
+
+        }
+        // similarity calculatin between two vectors
+        double sum = 0.0, sizeOfV1 = 0.0, sizeOfV2 = 0.0;
+        for(int i=0; i<vecLen; i++) {
+            sum += v1[i] * v2[i];
+            sizeOfV1 += v1[i] * v1[i];
+            sizeOfV2 += v2[i] * v2[i];
+        }
+        double similarity = (double)sum / (Math.sqrt(sizeOfV1) * (Math.sqrt(sizeOfV2)));
+        return similarity;
+    }
+
+
+
+    /**
      * Represents a document as TF-IDF vector
      * @param d1
      * @param d2
@@ -124,6 +156,8 @@ public class CosineSimilarity  {
         double similarity = (double)sum / (Math.sqrt(sizeOfV1) * (Math.sqrt(sizeOfV2)));
         return similarity;
     }
+
+
 
 
 
