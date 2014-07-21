@@ -2,6 +2,7 @@ package Classify.liblinear;
 
 import Classify.StringTokenizerIndx;
 import Classify.TagConstant;
+import Classify.liblinear.SVMClassifier;
 import com.clearnlp.dependency.DEPArc;
 import com.clearnlp.dependency.DEPNode;
 import com.clearnlp.dependency.DEPTree;
@@ -25,7 +26,7 @@ import java.util.regex.Pattern;
  */
 
 
-public class ExtractFeature {
+public class FeatureExtractor {
 
 
 
@@ -84,19 +85,18 @@ public class ExtractFeature {
             this.end = end;
         }
     }
+    LinkedList<Feature[]> allFeatures;
 
     Component table = new Component(TagConstant.BEGINTABLE, TagConstant.INTTABLE, TagConstant.ENDTABLE);
     Component code = new Component(TagConstant.BEGINCODE, TagConstant.INTCODE, TagConstant.ENDCODE);
     Component equation = new Component(TagConstant.BEGINEQU, TagConstant.INTEQU, TagConstant.ENDEQU);
     Component misc = new Component(TagConstant.BEGINMISC, TagConstant.INTMISC, TagConstant.ENDMISC);
 
-    LinkedList<Feature[]> allFeatures = new LinkedList<Feature[]>();
 
     double[] answers = new double[1000000];
     double[] predictedAnswers = new double[1000000];
 
     int featureIdx = 0;
-    int averageNoiseTokenLength = 0, averageNotNoiseTokenLength = 0;
 
     static int featureNodeNum = 3;
 
@@ -117,241 +117,13 @@ public class ExtractFeature {
     ;
 
     FeatureComparator fc = new FeatureComparator();
-
     int[] componentCount;
 
     static public void main(String[] args) throws IOException {
-
-        ExtractFeature ef = new ExtractFeature();
-//       apply the classifer to the other documents
-//        ef.generateCodeRemovedDocuments();
-//        ef.prepareFeatureForDocuments();
-
-        String baseDir = "/Users/mhjang/Desktop/clearnlp/allslides/";
-        String allAnnotationDir = baseDir + "annotation/";
-        String allParsingDir = baseDir + "parsed/";
-
-        DirectoryReader dr = new DirectoryReader(allAnnotationDir);
-
-
-        ef.generateClassifyFeatures(baseDir, dr.getFileNameList());
-        // Generate a problem with trainng set features
-  /*      Feature[][] allFeaturesArray = new Feature[allFeatures.size()][];
-
-        for (int i = 0; i < allFeatures.size(); i++) {
-            allFeaturesArray[i] = allFeatures.get(i);
-        }
-
-        Problem problem = new Problem();
-        problem.x = allFeaturesArray;
-        problem.n = featureNodeNum - 1;
-        problem.y = Arrays.copyOfRange(ef.answers, 0, allFeatures.size());
-        problem.l = allFeatures.size();
-
-
-        SolverType solver = SolverType.L2R_L2LOSS_SVC; // -s 0
-        double C = 1.0;    // cost of constraints violation
-        double eps = 0.01; // stopping criteria
-        int correctItem = 0;
-
-        Parameter param = new Parameter(SolverType.L2R_L2LOSS_SVC, 10, 0.01);
-        Model model = Linear.train(problem, param);
-        File modelFile = new File("slide_model_0608");
-  //      model.save(modelFile);
-   //     Model model = Model.load(modelFile);
-
-
-        int[] componentcounts= new int[5];
-        for(int i=0; i<5; i++) {
-            componentcounts[i] = 0;
-        }
-
-        for(int i=0; i<allFeaturesArray.length; i++) {
-            Feature[] instance = allFeaturesArray[i];
-            int prediction = (int)Linear.predict(model, instance);
-            if(problem.y[i] == prediction) correctItem++;
-            componentcounts[prediction]++;
-        }
-
-        System.out.println("Accuracy:" + (double)correctItem/(double)problem.y.length);
-        for(int i=0; i<5; i++) {
-            System.out.println(i + ":" + componentcounts[i]);
-        }
-/*
-        int nr_fold = 5;
-        double[] target = new double[problem.l];
-    //    Linear.crossValidation(problem, param, nr_fold, target);
-        int correctByComponent = 0;
-
-        HashMap<String, Integer> componentAccuracy = new HashMap<String, Integer>();
-        HashMap<Integer, Integer> classLabelCount = new HashMap<Integer, Integer>();
-
-        // initialize
-        componentAccuracy.put(TagConstant.tableTag, 0);
-        componentAccuracy.put(TagConstant.codeTag, 0);
-        componentAccuracy.put(TagConstant.equTag, 0);
-        componentAccuracy.put(TagConstant.miscTag, 0);
-        componentAccuracy.put(TagConstant.textTag, 0);
-
-  /*      double[] target = ef.predictedAnswers;
-
-
-        int codeComponentCorrect = 0, tableComponentCorrect = 0, equComponentCorrect = 0, miscComponentCorrect = 0;
-
-        HashMap<Integer, Integer> classLabelCount = new HashMap<Integer, Integer>();
-        */
-
-/*
-        int i=0;
-        while(i<target.length) {
-            System.out.println("predicted label: " + target[i] + " answer: " +  ef.answers[i]);
-            int answerType = (int) ef.answers[i];
-            int predictedType = (int) target[i];
-
-            /*************************
-             * Exact match computation
-             *************************/
-     /*       if (answerType == predictedType && predictedType == TagConstant.BEGINCODE) {
-                while (true) {
-                    if (answerType == predictedType) {
-                        if (answerType == TagConstant.ENDCODE) {
-                            codeComponentCorrect++;
-                            break;
-                        }
-                    } else break;
-                    i++;
-                    if(i>= target.length-1) break;
-
-                    answerType = (int) ef.answers[i];
-                    predictedType = (int) target[i];
-
-                }
-            }
-
-            if (answerType == predictedType && predictedType == TagConstant.BEGINTABLE) {
-                while (true) {
-                    if (answerType == predictedType) {
-                        if (answerType == TagConstant.ENDTABLE) {
-                            tableComponentCorrect++;
-                            break;
-                        }
-                    } else break;
-                    i++;
-                    if(i>= target.length-1) break;
-
-                    answerType = (int) ef.answers[i];
-                    predictedType = (int) target[i];
-
-                }
-            }
-
-            if (answerType == predictedType && predictedType == TagConstant.BEGINEQU) {
-                while (true) {
-                    if (answerType == predictedType) {
-                        if (answerType == TagConstant.ENDEQU) {
-                            equComponentCorrect++;
-                            break;
-                        }
-                    } else break;
-                    i++;
-                    if(i>= target.length-1) break;
-                    answerType = (int) ef.answers[i];
-                    predictedType = (int) target[i];
-
-                }
-            }
-
-            if (answerType == predictedType && predictedType == TagConstant.BEGINMISC) {
-                while (true) {
-                    if (answerType == predictedType) {
-                        if (answerType == TagConstant.ENDMISC) {
-                            miscComponentCorrect++;
-                            break;
-                        }
-                    } else break;
-                    i++;
-                    if(i>= target.length-1) break;
-                    answerType = (int) ef.answers[i];
-                    predictedType = (int) target[i];
-                }
-            }
-            i++;
-        }
-        */
-/*            correctItem = 0;
-            int predictedComponents = 0;
-            for(int i=0; i<target.length; i++) {
-                if ((int) ef.answers[i] == (int) target[i]) correctItem++;
-                if((int) ef.answers[i] != (int)TagConstant.TEXT) {
-                    predictedComponents++;
-                }
-                if (TagConstant.getTagLabelByComponent((int) ef.answers[i]).equals(TagConstant.getTagLabelByComponent((int) target[i]))) {
-                    String component = TagConstant.getTagLabelByComponent((int) ef.answers[i]);
-                    componentAccuracy.put(component, componentAccuracy.get(component) + 1);
-                    correctByComponent++;
-                }
-                if (classLabelCount.containsKey((int) ef.answers[i])) {
-                    int c = classLabelCount.get((int) ef.answers[i]);
-                    classLabelCount.put((int) ef.answers[i], c + 1);
-                } else
-                    classLabelCount.put((int) ef.answers[i], 1);
-            }
-
-        int tableCount = classLabelCount.get(TagConstant.BEGINTABLE);
-        int codeCount = classLabelCount.get(TagConstant.BEGINCODE);
-        int equCount = classLabelCount.get(TagConstant.BEGINEQU);
-        int miscCount = classLabelCount.get(TagConstant.BEGINMISC);
-
-
-   /*     int tableCount = classLabelCount.get(TagConstant.BEGINTABLE) + classLabelCount.get(TagConstant.INTTABLE) + classLabelCount.get(TagConstant.ENDTABLE);
-        int codeCount = classLabelCount.get(TagConstant.BEGINCODE) + classLabelCount.get(TagConstant.INTCODE) + classLabelCount.get(TagConstant.ENDCODE);
-        int equCount = classLabelCount.get(TagConstant.BEGINEQU) + classLabelCount.get(TagConstant.INTEQU) + classLabelCount.get(TagConstant.ENDEQU);
-        int miscCount = classLabelCount.get(TagConstant.BEGINMISC) + classLabelCount.get(TagConstant.INTMISC) + classLabelCount.get(TagConstant.ENDMISC);
-*/
-        /**************************
-         * print out exp settings
-         ***************************/
-  /*      System.out.println("EXP SETTING");
-        System.out.println("textual feature : " + textualFeatureOn);
-        System.out.println("N-gram feature : " + ngramFeatureOn);
-        System.out.println("equation feature : " + equationBaselineOn);
-        System.out.println("table feature : " + tableBaselineOn);
-        System.out.println("POS feature : " + posFeatureOn);
-        System.out.println("dependency feature : " + dependencyFeatureOn);
-        System.out.println("structural feature : " + structuralFeatureOn);
-        System.out.println("structural depdency feature : " + structuralDependencyOn);
-
-        System.out.println("Predicted components: " + predictedComponents);
-        System.out.println("Total token: " + ef.answers.length);
-
-        for(int i=0; i<13; i++) {
-            System.out.println(TagConstant.getTagLabel(i) + ":" + classLabelCount.get(i));
-        }
-
-        System.out.println("Correct by component: "+ correctByComponent);
-        System.out.println("Correct by class:" + correctItem);
-        System.out.println(target.length);
-
-        System.out.println("error : " + (double)correctItem / (double) target.length);
-        System.out.println("error by component: " + (double)correctByComponent / (double) target.length);
-
-
-
-        System.out.println("Text Accuracy: " + (double)componentAccuracy.get(TagConstant.textTag) / (double) classLabelCount.get(TagConstant.TEXT));
-        System.out.println("Table Accuracy: " + (double)componentAccuracy.get(TagConstant.tableTag) / (double) tableCount);
-        System.out.println("Code Accuracy: " + (double)componentAccuracy.get(TagConstant.codeTag) / (double) codeCount);
-        System.out.println("Equation Accuracy: " + (double)componentAccuracy.get(TagConstant.equTag) / (double) equCount);
-        System.out.println("Misc Accuracy: " + (double)componentAccuracy.get(TagConstant.miscTag) / (double) miscCount);
-
- /*       System.out.println("Exact Match");
-        System.out.println("Table Accuracy: " + tableComponentCorrect/ (double) classLabelCount.get(TagConstant.BEGINTABLE));
-        System.out.println("Code Accuracy: " + codeComponentCorrect / (double)classLabelCount.get(TagConstant.BEGINCODE));
-        System.out.println("Equation Accuracy: " + equComponentCorrect / (double) classLabelCount.get(TagConstant.BEGINEQU));
-        System.out.println("Misc Accuracy: " + miscComponentCorrect / (double) classLabelCount.get(TagConstant.BEGINMISC));
-*/
-
-    }
-
+        SVMClassifier svm = new SVMClassifier();
+  //      svm.runFiveFoldCrossValidation("/Users/mhjang/Desktop/clearnlp/allslides");
+        svm.applyModelToDocuments("slide_model_0608");
+   }
 
 
     int getFeatureIndex(String word) {
@@ -392,17 +164,14 @@ public class ExtractFeature {
      * @return
      * @throws java.io.IOException
      */
-    public void prepareFeatureForDocuments() throws IOException {
+    public void prepareFeatureForDocuments(String dir) throws IOException {
         //     read all annotated files from the directory
         //     String directory = "/Users/mhjang/Desktop/clearnlp/trainingdata/annotation/";
        // String parsedDir = "/Users/mhjang/Documents/teaching_documents/extracted/stemmed/parsed/";
-        String baseDir = "/Users/mhjang/Documents/teaching_documents/extracted/stemmed/parsed/gold/";
-        String parsedDir = baseDir + "parsed/";
-        model = Model.load(modelFile);
         String noiseRemovedline;
         ArrayList<Double> ratios = new ArrayList<Double>();
         componentCount = new int[5];
-        DirectoryReader dr = new DirectoryReader(parsedDir);
+        DirectoryReader dr = new DirectoryReader(dir);
         try {
             for (String filename : dr.getFileNameList()) {
                 removedNode = 0;
@@ -411,7 +180,7 @@ public class ExtractFeature {
 
                 if (filename.contains(".DS_Store")) continue;
                 // open a corresponding parsed file
-                reader.open(UTInput.createBufferedFileReader(parsedDir + filename));
+                reader.open(UTInput.createBufferedFileReader(dir + filename));
                 DEPTree tree;
                 ArrayList<DEPTree> treelist = new ArrayList<DEPTree>();
                 while ((tree = reader.next()) != null) {
@@ -422,8 +191,8 @@ public class ExtractFeature {
                 int treeIdx = 0;
                 String line;
                 String filename_ = filename.replace(".cnlp","");
-                String featureTokenDir = baseDir + "feature_tokens/";
-                String outputDir = baseDir + "noise_removed/";
+                String featureTokenDir = dir + "feature_tokens/";
+                String outputDir = dir + "noise_removed/";
                 SimpleFileReader freader = new SimpleFileReader(featureTokenDir + filename_);
                 SimpleFileWriter fwriter = new SimpleFileWriter(outputDir + filename_);
 
@@ -435,11 +204,10 @@ public class ExtractFeature {
                     line = freader.readLine();
                     boolean treeIdxSkip = false;
                     line = line.trim();
-
                     if (!line.isEmpty()) {
                         LinkedList<String> tokens = new LinkedList<String>();
                         int startIdx = 0;
-                        noiseRemovedline = classifyAndRemove(treelist.get(treeIdx), DetectCodeComponent.isCodeLine(line), DetectEquation.isEquation(line), DetectTable.isTable(line));
+                        noiseRemovedline = extractFeatureFromTree(0, 0, treelist.get(treeIdx), DetectCodeComponent.isCodeLine(line), DetectEquation.isEquation(line), DetectTable.isTable(line), true);
                         treeIdx++;
                         fwriter.writeLine(noiseRemovedline);
                     }
@@ -471,21 +239,38 @@ public class ExtractFeature {
         System.out.println("Average removed noise ratio: " + ratioSum / (double)ratios.size());
     }
 
+    private Model loadModel(String modelName) {
+        try {
+            File modelFile = new File(modelName);
+            Model model_ = Model.load(modelFile);
+            return model_;
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
 
 
 
     /**
      * Extract features for building the model
      * @param data
+     * @param applyModel: whether you use a trained model to fill out "previous label" feature
      * @return
      * @throws java.io.IOException
      */
-    public void generateClassifyFeatures(String baseDir, ArrayList<String> data) throws IOException {
+    public LinkedList<Feature[]> generateClassifyFeatures(String baseDir, ArrayList<String> data, boolean applyModel) throws IOException {
         //     read all annotated files from the directory
         //     String directory = "/Users/mhjang/Desktop/clearnlp/trainingdata/annotation/";
         // baseDir = "/Users/mhjang/Desktop/clearnlp/allslides/";
-         String parsedDir = baseDir + "parsed/";
+        allFeatures = new LinkedList<Feature[]>();
+
+        String parsedDir = baseDir + "parsed/";
+        String annotationDir = baseDir + "annotation/";
         int maxDependentCandidate = 0, maxDependent = 0;
+        if(applyModel) {
+            model = loadModel("slide_model_0608");
+        }
         try {
             for (String filename : data) {
                 DEPReader reader = new DEPReader(0, 1, 2, 3, 4, 5, 6);
@@ -502,7 +287,7 @@ public class ExtractFeature {
                 // then open an annotation file
                 int treeIdx = 0;
                 String line;
-                SimpleFileReader freader = new SimpleFileReader(baseDir + "annotation/" + filename);
+                SimpleFileReader freader = new SimpleFileReader(annotationDir + filename);
            //     System.out.println("loading " + filename);
 
                 boolean isTagBeginLine = false, tagClosed = false;
@@ -586,7 +371,7 @@ public class ExtractFeature {
                         if (treeIdxSkip) continue;
                   //      System.out.println(treeIdx + ":" + line);
                   //      printTree(treeIdx, treelist.get(treeIdx));
-                        maxDependentCandidate = extractFeatureFromTree(componentBegin, componentEnd, treelist.get(treeIdx), initiatedTag, beginToken, endToken, DetectCodeComponent.isCodeLine(line), DetectEquation.isEquation(line), DetectTable.isTable(line));
+                        maxDependentCandidate = extractFeatureFromTree(componentBegin, componentEnd, treelist.get(treeIdx), initiatedTag, beginToken, endToken, DetectCodeComponent.isCodeLine(line), DetectEquation.isEquation(line), DetectTable.isTable(line), false);
                         if(maxDependentCandidate > maxDependent)
                             maxDependent = maxDependentCandidate;
                   //      System.out.println("max dependent: " + maxDependent);
@@ -611,6 +396,7 @@ public class ExtractFeature {
             e.printStackTrace();
         }
         System.out.println("Max dependent: " + maxDependent);
+        return allFeatures;
     }
 
     private void printTree(int n, DEPTree tree) {
@@ -630,10 +416,12 @@ public class ExtractFeature {
      * @param tree
      * @param componentFragBegin, componentFragEnd: a fragment idx that should be at least tagged as <COMPONENT-I> in this line
      * @param beginTokenIdx: begin of the component, not the line. If this line doesn't contain the begin token, it is set to -1
-     *        endTokenIdx: end of the component, not the line.
-     *                            * @return
+     * @param applyModel: if set to be true, use the loaded model to fill out the "Previous label" feature as the prediction outcomes,
+     *                  otherwise, use the annotation (for initially training the model).
+     * @param endTokenIdx: end of the component, not the line.
+     *  @return
      */
-    private int extractFeatureFromTree(int componentFragBegin, int componentFragEnd, DEPTree tree, String tagType, int beginTokenIdx, int endTokenIdx, boolean isThisLineCode, boolean isThisLineEquation, boolean isThisLineTable) {
+    private int extractFeatureFromTree(int componentFragBegin, int componentFragEnd, DEPTree tree, String tagType, int beginTokenIdx, int endTokenIdx, boolean isThisLineCode, boolean isThisLineEquation, boolean isThisLineTable, boolean applyModel) {
         int i, size = tree.size(), npSum = 0;
         tree.resetDependents();
         DEPNode node;
@@ -651,6 +439,11 @@ public class ExtractFeature {
             component = equation;
         } else {
             component = misc;
+        }
+
+        if (applyModel && model == null) {
+            System.out.println("No model is loaded. Turn off \"Apply Model\" parameter or load model before call of this method.");
+            return 0;
         }
         String[] tokens = new String[size - 1];
         LinkedList<LinkedList<Feature>> featureList = new LinkedList<LinkedList<Feature>>();
@@ -908,7 +701,8 @@ public class ExtractFeature {
              **************************************************/
             if (structuralFeatureOn) {
                 if (featureIdx > 0)
-                    features.add(new FeatureNode(getFeatureIndex(PREVIOUS_LABEL), predictedAnswers[featureIdx - 1]));
+                    if(applyModel) features.add(new FeatureNode(getFeatureIndex(PREVIOUS_LABEL), predictedAnswers[featureIdx - 1]));
+                    else features.add(new FeatureNode(getFeatureIndex(PREVIOUS_LABEL), answers[featureIdx - 1]));
                 else
                     features.add(new FeatureNode(getFeatureIndex(PREVIOUS_LABEL), 0));
             }
@@ -931,7 +725,7 @@ public class ExtractFeature {
             } else {
                 answers[featureIdx] = TagConstant.TEXT;
             }
-            componentCount[toIndex(TagConstant.getTagLabelByComponent((int)answers[featureIdx]))]++;
+            componentCount[TagConstant.getTagIDByComponent((int)answers[featureIdx])]++;
 
 
             featureList.add(features);
@@ -942,8 +736,7 @@ public class ExtractFeature {
             featureArray = features.toArray(new Feature[features.size()]);
             allFeatures.add(featureArray);
 
-//            predictedAnswers[featureIdx] = Linear.predict(model, featureArray);
-            //       predictedAnswers[featureIdx] = 0;
+            if(applyModel) predictedAnswers[featureIdx] = Linear.predict(model, featureArray);
             featureIdx++;
 
         }
@@ -985,364 +778,6 @@ public class ExtractFeature {
         }
     }
         return max;
-    }
-
-
-
-    private int toIndex(String tagName) {
-        if(tagName.equals(TagConstant.tableTag)) return 0;
-        if(tagName.equals(TagConstant.codeTag)) return 1;
-        if(tagName.equals(TagConstant.equTag)) return 2;
-        if(tagName.equals(TagConstant.miscTag)) return 3;
-        if(tagName.equals(TagConstant.textTag)) return 4;
-        return -1;
-
-    }
-
-    /**
-     * 6/1/2014
-     * extract features for each token in a parsing tree
-     * @param tree
-     *        endTokenIdx: end of the component, not the line.
-     *                            * @return
-     */
-    private String classifyAndRemove(DEPTree tree, boolean isThisLineCode, boolean isThisLineEquation, boolean isThisLineTable) {
-        int i, size = tree.size(), npSum = 0;
-        tree.resetDependents();
-        DEPNode node;
-        int noiseCount = 0;
-
-        /** select the component tag **/
-        String[] tokens = new String[size - 1];
-        LinkedList<LinkedList<Feature>> featureList = new LinkedList<LinkedList<Feature>>();
-        LinkedList<HashSet<Integer>> featureIndexList = new LinkedList<HashSet<Integer>>();
-        StringBuilder builder = new StringBuilder();
-        int featureIndx;
-        for (i = 1; i < size; i++) {
-            node = tree.get(i);
-            List<DEPArc> dependents = node.getDependents();
-
-            // check feature index duplicate
-            HashSet<Integer> featureIndex = new HashSet<Integer>();
-            tokens[i - 1] = node.form;
-            LinkedList<Feature> features = new LinkedList<Feature>();
-            /***********************************************
-             *                 Textual Features            *
-             ***********************************************/
-            if (textualFeatureOn) {
-                /***
-                 * Feature 1: Does this token contain numbers?
-                 */
-
-                Matcher m1 = numberPattern.matcher(node.form);
-                if (m1.find())
-                    features.add(feature1True);
-                else
-                    features.add(feature1False);
-
-                /**
-                 * Feature 2: Is this token a punctuation?
-                 */
-
-                Matcher m2 = puctPattern.matcher(node.form);
-                // whether token is a punctuation
-                if (m2.find())
-                    features.add(feature2True);
-                else
-                    features.add(feature2False);
-
-                /**
-                 * Feature 3: the length of the token
-                 */
-                int charlen = node.form.length();
-                features.add(new FeatureNode(getFeatureIndex(CHAR_LEN), charlen));
-            }
-
-            if (ngramFeatureOn) {
-
-                /**
-                 * Feature 4: 1-gram of the token
-                 */
-                featureIndx = getFeatureIndex(node.form);
-                if (!featureIndex.contains(featureIndx)) {
-                    features.add(new FeatureNode(getFeatureIndex(node.form), 1));
-                    featureIndex.add(featureIndx);
-                }
-                /**
-                 * bi-gram - previous token
-                 */
-                featureIndx = getFeatureIndex("P_" + tree.get(i - 1).form);
-                if (!featureIndex.contains(featureIndx)) {
-                    features.add(new FeatureNode(featureIndx, 1));
-                    featureIndex.add(featureIndx);
-                }
-
-                /**
-                 * bi-gram - next token
-                 */
-                if (i != size - 1)
-                    featureIndx = getFeatureIndex("N_" + tree.get(i + 1).form);
-
-                else
-                    featureIndx = getFeatureIndex("N_END");
-
-                if (!featureIndex.contains(featureIndx)) {
-                    features.add(new FeatureNode(featureIndx, 1));
-                    featureIndex.add(featureIndx);
-                }
-
-                /**
-                 * bi-gram - bigram token (prev + current)
-                 */
-                featureIndx = getFeatureIndex(tree.get(i - 1).form + " " + node.form);
-                if (!featureIndex.contains(featureIndx)) {
-                    features.add(new FeatureNode(featureIndx, 1));
-                    featureIndex.add(featureIndx);
-                }
-
-
-                /**
-                 * bi-gram - bigram token (prev + current)
-                 */
-                if (i != size - 1)
-                    featureIndx = getFeatureIndex(node.form + " " + tree.get(i + 1).form);
-                else
-                    featureIndx = getFeatureIndex(node.form + " " + "N_END");
-                if (!featureIndex.contains(featureIndx)) {
-                    features.add(new FeatureNode(featureIndx, 1));
-                    featureIndex.add(featureIndx);
-                }
-            }
-
-            /****************************
-             * Code component baseline
-             ****************************/
-            if (codeBaselineFeatureOn) {
-                /**
-                 * Is this token a bracket?
-                 */
-
-                features.add(new FeatureNode(getFeatureIndex(IS_BRACKET), DetectCodeComponent.isBracket(node.form) ? 1 : 0));
-
-                /**
-                 * Is this token a Camal case variable name?
-                 */
-
-                features.add(new FeatureNode(getFeatureIndex(IS_VARIABLE), DetectCodeComponent.isVariable(node.form) ? 1 : 0));
-
-                /**
-                 * Is this token a comment "//"?
-                 */
-
-                features.add(new FeatureNode(getFeatureIndex(IS_COMMENT), DetectCodeComponent.isComment(node.form) ? 1 : 0));
-
-                /**
-                 * Is this token a programming operator?
-                 */
-
-                features.add(new FeatureNode(getFeatureIndex(IS_OPERATOR), DetectCodeComponent.isOperator(node.form) ? 1 : 0));
-
-                /**
-                 * Is this token a parenthesis?
-                 */
-
-                features.add(new FeatureNode(getFeatureIndex(IS_PARENTHESIS), DetectCodeComponent.isParenthesis(node.form) ? 1 : 0));
-
-                /**
-                 * Is this token a parenthesis?
-                 */
-
-                features.add(new FeatureNode(getFeatureIndex(IS_SEMICOLON), DetectCodeComponent.isSemicolon(node.form) ? 1 : 0));
-
-                /**
-                 * Is this line of the token a code line?
-                 */
-                features.add(new FeatureNode(getFeatureIndex(IS_CODELINE), isThisLineCode ? 1 : 0));
-            }
-
-            /****************************
-             * Equation component baseline
-             ****************************/
-            if (equationBaselineOn)
-                features.add(new FeatureNode(getFeatureIndex(IS_EQUATION), isThisLineEquation ? 1 : 0));
-
-
-            /****************************
-             * Table component baseline
-             ****************************/
-            if (tableBaselineOn)
-                features.add(new FeatureNode(getFeatureIndex(IS_TABLE), isThisLineTable ? 1 : 0));
-
-
-            /**************************************************
-             *      Parsing features (1) POS TAG Features     *
-             * ************************************************/
-
-            /**
-             * POS tag of the token
-             */
-            if (posFeatureOn) {
-                featureIndx = getFeatureIndex(node.pos);
-                if (!featureIndex.contains(featureIndx)) {
-                    features.add(new FeatureNode(featureIndx, 1));
-                    featureIndex.add(featureIndx);
-                }
-
-                /**
-                 * POS tags of the token's dependents
-                 */
-                for (DEPArc arc : dependents) {
-                    featureIndx = getFeatureIndex("D_" + arc.getNode().pos);
-                    if (!featureIndex.contains(featureIndx)) {
-                        features.add(new FeatureNode(featureIndx, 1));
-                        featureIndex.add(featureIndx);
-                    }
-                }
-
-                /**
-                 * POS tags of the token's heads
-                 */
-                if (node.hasHead()) {
-                    features.add(new FeatureNode(getFeatureIndex("H_" + node.getHead().pos), 1));
-                }
-
-                /**
-                 * Prev word (i-1) + POS tag of the current word
-                 */
-
-                featureIndx = getFeatureIndex(tree.get(i - 1).form + " " + node.pos);
-                if (!featureIndex.contains(featureIndx)) {
-                    features.add(new FeatureNode(featureIndx, 1));
-                    featureIndex.add(featureIndx);
-                }
-
-                /**
-                 * POS tag of the prev word + the current word
-                 */
-
-                featureIndx = getFeatureIndex(tree.get(i - 1).pos + " " + node.form);
-                if (!featureIndex.contains(featureIndx)) {
-                    features.add(new FeatureNode(featureIndx, 1));
-                    featureIndex.add(featureIndx);
-                }
-
-                /**
-                 * the current word + POS tag of the next word
-                 */
-
-                if (i != size - 1) {
-                    featureIndx = getFeatureIndex(node.form + " " + tree.get(i + 1).pos);
-                    if (!featureIndex.contains(featureIndx)) {
-                        features.add(new FeatureNode(featureIndx, 1));
-                        featureIndex.add(featureIndx);
-                    }
-                }
-
-                /**
-                 * the current pos + the next word
-                 */
-
-                if (i != size - 1) {
-                    featureIndx = getFeatureIndex(node.pos + " " + tree.get(i + 1).form);
-                    if (!featureIndex.contains(featureIndx)) {
-                        features.add(new FeatureNode(featureIndx, 1));
-                        featureIndex.add(featureIndx);
-                    }
-                }
-            }
-
-            /**************************************************
-             *      Parsing features (2) RELATION Features     *
-             * ************************************************/
-            if (dependencyFeatureOn) {
-                for (DEPArc arc : dependents) {
-                    featureIndx = getFeatureIndex(arc.getNode().getLabel());
-                    if (!featureIndex.contains(featureIndx)) {
-                        features.add(new FeatureNode(featureIndx, 1));
-                        featureIndex.add(featureIndx);
-                    }
-                }
-
-            }
-            /**************************************************
-             *      Structural Features                       *
-             **************************************************/
-            if (structuralFeatureOn) {
-                if (featureIdx > 0)
-                    features.add(new FeatureNode(getFeatureIndex(PREVIOUS_LABEL), predictedAnswers[featureIdx - 1]));
-                else
-                    features.add(new FeatureNode(getFeatureIndex(PREVIOUS_LABEL), 0));
-            }
-
-            /*System.out.println(node.form);
-            for(Feature f : features) {
-                System.out.println(f.getIndex()+ ": " + f.getValue());
-            }*/
-
-
-            featureList.add(features);
-            featureIndexList.add(featureIndex);
-            Collections.sort(features, fc);
-
-            Feature[] featureArray;
-            featureArray = features.toArray(new Feature[features.size()]);
-            allFeatures.add(featureArray);
-
-            predictedAnswers[featureIdx] = Linear.predict(model, featureArray);
-            if(TagConstant.getTagLabelByComponent((int)predictedAnswers[featureIdx]) == TagConstant.textTag)
-            {
-                builder.append(node.form + " ");
-                remainingNode++;
-            }
-            else {
-                removedNode++;
-             //   System.out.println(node.form);
-            }
-            // count the number of components predicted
-            componentCount[(int)predictedAnswers[featureIdx]]++;
-
-            //       predictedAnswers[featureIdx] = 0;
-            featureIdx++;
-
-        }
-
-        /****************************************
-         * Structural features of the dependents
-         **************************************/
-        if (structuralDependencyOn) {
-
-            for (i = 1; i < size; i++) {
-
-                node = tree.get(i);
-                LinkedList<Feature> features = featureList.get(i - 1);
-
-                List<DEPArc> dependents = node.getDependents();
-                HashSet<Integer> featureIndex = featureIndexList.get(i - 1);
-                for (DEPArc arc : dependents) {
-                    int dependentIdx = featureIdx - (size - arc.getNode().id);
-                    String label = "DEP_" + predictedAnswers[dependentIdx];
-                    featureIndx = getFeatureIndex(label);
-                    if (!featureIndex.contains(featureIndx)) {
-                        for (int j = 0; j < features.size(); j++) {
-                            FeatureNode fn = (FeatureNode) features.get(j);
-                            if (fn.getIndex() > featureIndx) {
-                                features.add(j, fn);
-                                break;
-                            }
-                            if (j == features.size() - 1)
-                                features.add(fn);
-                        }
-                        featureIndex.add(featureIndx);
-                    }
-                }
-
-                //          Collections.sort(features, fc);
-                Feature[] featureArray;
-                featureArray = features.toArray(new Feature[features.size()]);
-
-            }
-        }
-        return builder.toString();
     }
 
 

@@ -1,6 +1,5 @@
 package Classify.liblinear;
 
-import Classify.FeatureExtractor;
 import Classify.TagConstant;
 import de.bwaldvogel.liblinear.*;
 import simple.io.myungha.DirectoryReader;
@@ -79,7 +78,7 @@ public class SVMClassifier {
         double C = 1.0;    // cost of constraints violation
         double eps = 0.01; // stopping criteria
 
-        Parameter param = new Parameter(SolverType.L2R_L2LOSS_SVC, 10, 0.01);
+        Parameter param = new Parameter(SolverType.L2R_L2LOSS_SVC, C, eps);
 
         Model model = Linear.train(problem, param);
         File modelFile = new File(modelFileName);
@@ -92,7 +91,7 @@ public class SVMClassifier {
         FeatureExtractor ef = new FeatureExtractor();
         File modelFile = new File(modelFileName);
         Model model = Model.load(modelFile);
-        String baseDir = "/Users/mhjang/Desktop/clearnlp/allslides/";
+        String baseDir = "/Users/mhjang/Documents/teaching_documents/extracted/stemmed/";
         String allParsingDir = baseDir + "parsed/";
 
         ef.prepareFeatureForDocuments(allParsingDir, model);
