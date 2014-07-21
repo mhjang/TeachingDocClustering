@@ -10,13 +10,16 @@ import java.util.ArrayList;
 public class DirectoryReader {
     static int FILE_ONLY = 0, DIRECTORY_ONLY = 1;
     ArrayList<String> filenames;
+    ArrayList<String> filePathList;
     int openOption = FILE_ONLY; // default
+    String dir;
 
-    public DirectoryReader(String dir, int option) {
+    public DirectoryReader(String dir_, int option) {
 
         final File folder = new File(dir);
         filenames = new ArrayList<String>();
         openOption = option;
+        dir = dir_;
 
         readFiles(folder);
     }
@@ -45,5 +48,19 @@ public class DirectoryReader {
     }
     public ArrayList<String> getFileNameList() {
         return filenames;
+    }
+
+    /**
+     * 7/
+     * @return
+     */
+    public ArrayList<String> getFilePathList() {
+       if(filePathList == null) {
+           filePathList = new ArrayList<String>();
+           for(int i=0; i<filenames.size(); i++) {
+                filePathList.add(dir + "/" + filenames.get(i));
+            }
+        }
+       return filePathList;
     }
 }

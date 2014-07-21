@@ -92,10 +92,32 @@ public class TagConstant {
 
     }
 
+
+    public static boolean isValidTagType(String type) {
+        int tagIdx = getComponentID(type);
+        if(tagIdx >= TEXT && tagIdx <= ENDMISC) return true;
+        else return false;
+    }
+    public static int getTagIDByComponent(int tagIdx) {
+        if(tagIdx == BEGINTABLE || tagIdx == INTTABLE || tagIdx == ENDTABLE) return BEGINTABLE;
+        else if(tagIdx == BEGINCODE || tagIdx == INTCODE || tagIdx == ENDCODE) return BEGINCODE;
+        else if(tagIdx == BEGINEQU || tagIdx == INTEQU || tagIdx == ENDEQU ) return BEGINEQU;
+        else if(tagIdx == BEGINMISC || tagIdx == INTMISC || tagIdx == ENDMISC) return BEGINMISC;
+        else return TEXT;
+
+    }
     public static String findMatchingEndTag(String beginTag) {
-        if(beginTag == TagConstant.tableTag) return TagConstant.tableCloseTag;
-        else if(beginTag == TagConstant.codeTag) return TagConstant.codeCloseTag;
-        else if(beginTag == TagConstant.equTag) return TagConstant.equCloseTag;
+        if(beginTag.equals(TagConstant.tableTag)) return TagConstant.tableCloseTag;
+        else if(beginTag.equals(TagConstant.codeTag)) return TagConstant.codeCloseTag;
+        else if(beginTag.equals(TagConstant.equTag)) return TagConstant.equCloseTag;
         else return TagConstant.miscCloseTag;
+    }
+
+    public static int getComponentID(String tag) {
+        if(tag.equals(tableTag)) return BEGINTABLE;
+        else if(tag.equals(codeTag)) return BEGINCODE;
+        else if(tag.equals(equTag)) return BEGINEQU;
+        else if(tag.equals(miscTag)) return BEGINMISC;
+        else return TEXT;
     }
 }

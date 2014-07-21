@@ -15,6 +15,7 @@ import de.bwaldvogel.liblinear.*;
 import simple.io.myungha.DirectoryReader;
 import simple.io.myungha.SimpleFileReader;
 import simple.io.myungha.SimpleFileWriter;
+import Classify.liblinear.FeatureParameter;
 
 import java.io.*;
 import java.util.*;
@@ -207,6 +208,7 @@ public class FeatureExtractor {
                     if (!line.isEmpty()) {
                         LinkedList<String> tokens = new LinkedList<String>();
                         int startIdx = 0;
+                        FeatureParameter param = new FeatureParameter.Builder(treelist.get(treeIdx), DetectCodeComponent.isCodeLine(line), DetectEquation.isEquation(line), DetectTable.isTable(line), true).componentFrag()build();
                         noiseRemovedline = extractFeatureFromTree(0, 0, treelist.get(treeIdx), DetectCodeComponent.isCodeLine(line), DetectEquation.isEquation(line), DetectTable.isTable(line), true);
                         treeIdx++;
                         fwriter.writeLine(noiseRemovedline);
@@ -371,7 +373,8 @@ public class FeatureExtractor {
                         if (treeIdxSkip) continue;
                   //      System.out.println(treeIdx + ":" + line);
                   //      printTree(treeIdx, treelist.get(treeIdx));
-                        maxDependentCandidate = extractFeatureFromTree(componentBegin, componentEnd, treelist.get(treeIdx), initiatedTag, beginToken, endToken, DetectCodeComponent.isCodeLine(line), DetectEquation.isEquation(line), DetectTable.isTable(line), false);
+                        FeatureParameter param = new FeatureParameter.Builder(treelist.get(treeIdx), DetectCodeComponent.isCodeLine(line), DetectEquation.isEquation(line), DetectTable.isTable(line), true).componentFrag(new FragmentIndex(componentBegin, componentEnd)).tagType(initiatedTag).tokenLocation(new FragmentIndex(beginToken, endToken)).build();
+                        maxDependentCandidate = extractFeatureFromTree(param);
                         if(maxDependentCandidate > maxDependent)
                             maxDependent = maxDependentCandidate;
                   //      System.out.println("max dependent: " + maxDependent);
@@ -421,7 +424,7 @@ public class FeatureExtractor {
      * @param endTokenIdx: end of the component, not the line.
      *  @return
      */
-    private int extractFeatureFromTree(int componentFragBegin, int componentFragEnd, DEPTree tree, String tagType, int beginTokenIdx, int endTokenIdx, boolean isThisLineCode, boolean isThisLineEquation, boolean isThisLineTable, boolean applyModel) {
+    private int extractFeatureFromTree(FeatureParameter param) {
         int i, size = tree.size(), npSum = 0;
         tree.resetDependents();
         DEPNode node;

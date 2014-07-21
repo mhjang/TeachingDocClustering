@@ -21,6 +21,7 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.util.ArrayList;
 
+import Classify.TagConstant;
 import opennlp.maxent.BasicContextGenerator;
 import opennlp.maxent.ContextGenerator;
 import opennlp.maxent.DataStream;
@@ -76,6 +77,7 @@ public class Predict {
     public static void main(String[] args) throws IOException {
         String dataFileName, modelFileName, truthFileName;
         boolean real = false;
+
         String type = "maxent";
         int ai = 0;
         for (int i = 0; i < 5; i++) {
@@ -83,6 +85,9 @@ public class Predict {
             modelFileName = "/Users/mhjang/Documents/workspace/TeachingDocClustering/training_" + i + "Model.txt";
             truthFileName = dataFileName.substring(0, dataFileName.lastIndexOf(".")) + "_answers.txt";
             SimpleFileReader sr = new SimpleFileReader(truthFileName);
+            int[] correctCount = {0, 0, 0, 0, 0};
+            int[] allCount = {0, 0, 0, 0, 0};
+
             ArrayList<String> truthData = new ArrayList<String>();
             String answer;
             while (sr.hasMoreLines()) {
@@ -106,10 +111,14 @@ public class Predict {
                 while (ds.hasNext()) {
                     String s = (String) ds.nextToken();
                     String prediction = predictor.eval(s.substring(0, s.lastIndexOf(' ')), real);
-                    if (prediction.equals(truthData.get((k++))))
-                        correct++;
-                    else
-                        wrong++;
+                    if (prediction.equals(truthData.get((k)))) {
+                        correctCount[TagConstant.getComponentID(prediction)]++;
+                    }
+             //       System.out.println(prediction);
+                    allCount[TagConstant.getComponentID(truthData.get(k++))]++;
+                }
+                for(int t=0; t<5; t++) {
+                    System.out.println(TagConstant.getTagLabel(t) + ": " + (double)correctCount[t]/(double)allCount[t]);
                 }
                 System.out.println(correct + "\t" + wrong + "\t" + (double) (correct) / (double) (wrong + correct));
             } catch (Exception e) {

@@ -15,7 +15,6 @@ import com.clearnlp.util.UTInput;
 import componentDetection.DetectCodeComponent;
 import componentDetection.DetectEquation;
 import componentDetection.DetectTable;
-import de.bwaldvogel.liblinear.*;
 import simple.io.myungha.DirectoryReader;
 import simple.io.myungha.SimpleFileReader;
 import simple.io.myungha.SimpleFileWriter;
@@ -30,7 +29,7 @@ import java.util.regex.Pattern;
  */
 
 
-public class ExtractFeature {
+public class MaxEntFeatureExtractor {
 
 
 
@@ -117,10 +116,7 @@ public class ExtractFeature {
 
     static public void main(String[] args) throws IOException {
 
-        ExtractFeature ef = new ExtractFeature();
-//       apply the classifer to the other documents
-//        ef.generateCodeRemovedDocuments();
-//        ef.prepareFeatureForDocuments();
+        MaxEntFeatureExtractor ef = new MaxEntFeatureExtractor();
 
         String baseDir = "/Users/mhjang/Desktop/clearnlp/allslides/";
         String allAnnotationDir = baseDir + "annotation/";
