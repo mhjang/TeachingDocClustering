@@ -15,6 +15,7 @@ import java.util.LinkedList;
  * It is a wrapper class that uses liblinear API for SVM Classification.
  */
 public class SVMClassifier {
+
     /***
      * Directory structure
      * base directory |-- /annotation : contains annotation files
@@ -25,13 +26,14 @@ public class SVMClassifier {
      * @throws java.io.IOException
      */
     FeatureExtractor ef = new FeatureExtractor();
+    private Model model;
 
     private Problem generateProblem(String baseDir) throws IOException {
         String allAnnotationDir = baseDir + "annotation/";
 
         DirectoryReader dr = new DirectoryReader(allAnnotationDir);
         // generate features from all annotation files because it's for five fold cross validation
-        LinkedList<Feature[]> allFeatures = ef.generateClassifyFeatures(baseDir, dr.getFileNameList());
+        LinkedList<Feature[]> allFeatures = ef.generateClassifyFeatures(baseDir, dr.getFileNameList(), false);
         // convert it to 2D array format
         Feature[][] allFeaturesArray = new Feature[allFeatures.size()][];
         for (int i = 0; i < allFeatures.size(); i++) {
@@ -48,21 +50,36 @@ public class SVMClassifier {
     }
 
 
-    public void runFiveFoldCrossValidation(String baseDir) throws IOException {
+    public void runFiveFoldCrossValidation(String baseDir, boolean useAnnotation) {
         //       Problem problem = generateProblem("/Users/mhjang/Desktop/clearnlp/allslides/");
-        Problem problem = generateProblem(baseDir);
+        try {
+            Problem problem = generateProblem(baseDir);
 
-        SolverType solver = SolverType.L2R_L2LOSS_SVC; // -s 0
-        double C = 1.0;    // cost of constraints violation
-        double eps = 0.01; // stopping criteria
+            SolverType solver = SolverType.L2R_L2LOSS_SVC; // -s 0
+            double C = 1.0;    // cost of constraints violation
+            double eps = 0.01; // stopping criteria
 
-        Parameter param = new Parameter(SolverType.L2R_L2LOSS_SVC, 10, 0.01);
-        int nr_fold = 5;
-        double[] target = new double[problem.l];
-        // the predicted results are saved at "target" array
-        Linear.crossValidation(problem, param, nr_fold, target);
-        // evaluate it by comparing target and ef.answers
-        evaluate(target, ef.answers, true);
+            Parameter param = new Parameter(SolverType.L2R_L2LOSS_SVC, 10, 0.01);
+            int nr_fold = 5;
+            double[] target = new double[problem.l];
+            // the predicted results are saved at "target" array
+            Linear.crossValidation(problem, param, nr_fold, target);
+            // evaluate it by comparing target and ef.answers
+            evaluate(target, ef.answers, useAnnotation);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    public void setModel(String modelName) {
+        try {
+            File file = new File(modelName);
+            Model model_ = Linear.loadModel(file);
+            this.model = model_;
+
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 
     /**
@@ -70,31 +87,38 @@ public class SVMClassifier {
      * @param baseDir, modelFileName
      * @throws IOException
      */
-    public void createModel(String baseDir, String modelFileName) throws IOException {
+    public void learnModel(String baseDir, String modelFileName) {
 //        Problem problem = generateProblem("/Users/mhjang/Desktop/clearnlp/allslides/");
-        Problem problem = generateProblem(baseDir);
+        try {
+            Problem problem = generateProblem(baseDir);
 
-        SolverType solver = SolverType.L2R_L2LOSS_SVC; // -s 0
-        double C = 1.0;    // cost of constraints violation
-        double eps = 0.01; // stopping criteria
+            SolverType solver = SolverType.L2R_L2LOSS_SVC; // -s 0
+            double C = 1.0;    // cost of constraints violation
+            double eps = 0.01; // stopping criteria
 
-        Parameter param = new Parameter(SolverType.L2R_L2LOSS_SVC, C, eps);
+            Parameter param = new Parameter(SolverType.L2R_L2LOSS_SVC, C, eps);
 
-        Model model = Linear.train(problem, param);
-        File modelFile = new File(modelFileName);
-        model.save(modelFile);
-
+            Model model = Linear.train(problem, param);
+            File modelFile = new File(modelFileName);
+            model.save(modelFile);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
 
     }
 
-    public void applyModelToDocuments(String modelFileName) throws IOException {
-        FeatureExtractor ef = new FeatureExtractor();
-        File modelFile = new File(modelFileName);
-        Model model = Model.load(modelFile);
-        String baseDir = "/Users/mhjang/Documents/teaching_documents/extracted/stemmed/";
-        String allParsingDir = baseDir + "parsed/";
+    public void applyModelToDocuments(String modelFileName) {
+        try {
+            FeatureExtractor ef = new FeatureExtractor();
+            File modelFile = new File(modelFileName);
+            Model model = Model.load(modelFile);
+            String baseDir = "/Users/mhjang/Documents/teaching_documents/extracted/stemmed/";
+            String allParsingDir = baseDir + "parsed/";
 
-        ef.prepareFeatureForDocuments(allParsingDir, model);
+            ef.prepareFeatureForDocuments(allParsingDir, model);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 
     /**
