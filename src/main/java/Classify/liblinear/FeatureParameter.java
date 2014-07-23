@@ -2,6 +2,7 @@ package Classify.liblinear;
 
 import Classify.TagConstant;
 import com.clearnlp.dependency.DEPTree;
+import de.bwaldvogel.liblinear.Model;
 
 import javax.swing.text.html.HTML;
 
@@ -27,6 +28,7 @@ public class FeatureParameter {
     private final boolean excludeEqu;
     private final boolean excludeMisc;
 
+    private final Model model;
 
 
     public static class Builder {
@@ -46,6 +48,8 @@ public class FeatureParameter {
         private boolean excludeEqu = false;
         private boolean excludeMisc = false;
 
+        private Model model = null;
+
         public Builder(DEPTree tree_, boolean isThisLineCode_, boolean isThisLineEquation_, boolean isThisLineTable_, boolean applyModel_) {
             this.tree = tree_;
             this.isThisLineCode = isThisLineCode_;
@@ -61,9 +65,9 @@ public class FeatureParameter {
         }
 
         public Builder tagType(String type) throws Exception {
-            if (TagConstant.isValidTagType(type)) {
+//            if (TagConstant.isValidTagType(type)) {
                 this.tagType = type;
-            } else throw new Exception("wrong tag type!");
+  //          } else throw new Exception("wrong tag type!");
             return this;
         }
 
@@ -91,6 +95,11 @@ public class FeatureParameter {
             this.excludeMisc = true;
             return this;
         }
+
+        public Builder model(Model model_) {
+            this.model = model_;
+            return this;
+        }
         public FeatureParameter build() {
             return new FeatureParameter(this);
         }
@@ -109,6 +118,7 @@ public class FeatureParameter {
         this.excludeMisc = builder.excludeMisc;
         this.excludeEqu = builder.excludeEqu;
         this.excludeTable = builder.excludeTable;
+        this.model = builder.model;
 
     }
 

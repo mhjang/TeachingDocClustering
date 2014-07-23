@@ -30,7 +30,6 @@ import java.util.regex.Pattern;
 public class FeatureExtractor {
 
 
-
     static String initiatedTag = null;
     static String[] tags = {TagConstant.codeTag, TagConstant.tableTag, TagConstant.equTag, TagConstant.miscTag};
     static String[] closetags = {TagConstant.codeCloseTag, TagConstant.tableCloseTag, TagConstant.equCloseTag, TagConstant.miscCloseTag};
@@ -120,11 +119,27 @@ public class FeatureExtractor {
     FeatureComparator fc = new FeatureComparator();
     int[] componentCount;
 
-    static public void main(String[] args) throws IOException {
+    public static void main(String[] args) {
         SVMClassifier svm = new SVMClassifier();
-  //      svm.runFiveFoldCrossValidation("/Users/mhjang/Desktop/clearnlp/allslides");
-        svm.applyModelToDocuments("slide_model_0608");
-   }
+        final boolean useAnnotation = true;
+        final boolean useModel = false;
+        String baseDir = "/Users/mhjang/Desktop/clearnlp/allslides/";
+        // routine 1: do five fold cross validation with annotation to evaluate the accuracy
+        svm.runFiveFoldCrossValidation("/Users/mhjang/Desktop/clearnlp/allslides/", useAnnotation);
+
+        // routine 2: use all data for learning a model and use the model for five fold cross validation by predicting "previous_label" field
+        /*
+        String modelOutput = "slide_model_0723";
+        svm.learnModel(baseDir, modelOutput);
+        svm.setModel(modelOutput);
+        svm.runFiveFoldCrossValidation(baseDir, useModel);
+
+        // routine 3: apply the learned model to generate the noise-free version of documents
+        svm.applyModelToDocuments(modelOutput);
+        */
+
+    }
+
 
 
     int getFeatureIndex(String word) {
@@ -165,7 +180,7 @@ public class FeatureExtractor {
      * @return
      * @throws java.io.IOException
      */
-    public void prepareFeatureForDocuments(String dir) throws IOException {
+    public void prepareFeatureForDocuments(String dir, Model model) throws IOException {
         //     read all annotated files from the directory
         //     String directory = "/Users/mhjang/Desktop/clearnlp/trainingdata/annotation/";
        // String parsedDir = "/Users/mhjang/Documents/teaching_documents/extracted/stemmed/parsed/";
@@ -266,7 +281,7 @@ public class FeatureExtractor {
         //     String directory = "/Users/mhjang/Desktop/clearnlp/trainingdata/annotation/";
         // baseDir = "/Users/mhjang/Desktop/clearnlp/allslides/";
         allFeatures = new LinkedList<Feature[]>();
-
+  //      baseDir = "/Users/mhjang/Documents/teaching_documents/extracted/stemmed/";
         String parsedDir = baseDir + "parsed/";
         String annotationDir = baseDir + "annotation/";
         int maxDependentCandidate = 0, maxDependent = 0;
@@ -371,7 +386,7 @@ public class FeatureExtractor {
                             if (tagClosed) endToken = componentEnd;
                         }
                         if (treeIdxSkip) continue;
-                        FeatureParameter param = new FeatureParameter.Builder(treelist.get(treeIdx), DetectCodeComponent.isCodeLine(line), DetectEquation.isEquation(line), DetectTable.isTable(line), true).componentFrag(new FragmentIndex(componentBegin, componentEnd)).tagType(initiatedTag).tokenLocation(new FragmentIndex(beginToken, endToken)).build();
+                        FeatureParameter param = new FeatureParameter.Builder(treelist.get(treeIdx), DetectCodeComponent.isCodeLine(line), DetectEquation.isEquation(line), DetectTable.isTable(line), applyModel).componentFrag(new FragmentIndex(componentBegin, componentEnd)).tagType(initiatedTag).tokenLocation(new FragmentIndex(beginToken, endToken)).build();
                         createTrainingFeatureWithAnnotation(param);
                         numOfTokensInDoc += treelist.get(treeIdx).size() - 1;
                         if (tagClosed) {
@@ -420,6 +435,13 @@ public class FeatureExtractor {
         for (i = 1; i < size; i++) {
             node = tree.get(i);
             List<DEPArc> dependents = node.getDependents();
+            if(dependents != null) {
+                System.out.println(dependents.size());
+
+           }
+            else
+                dependents = new LinkedList<DEPArc>();
+
             // check feature index duplicate
             HashSet<Integer> featureIndex = new HashSet<Integer>();
             /***********************************************
@@ -687,6 +709,7 @@ public class FeatureExtractor {
         Component component = getComponent(param.getTagType());
         DEPTree tree = param.getParsingTree();
         int i, size = tree.size();
+        tree.resetDependents();
         for (i = 1; i < size; i++) {
             param.setCurrentIndex(i);
             LinkedList<Feature> features = extractFeatures(param);
