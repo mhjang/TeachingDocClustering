@@ -16,6 +16,7 @@ public class FeatureParameter {
     private final boolean isThisLineEquation;
     private final boolean isThisLineTable;
     private final boolean applyModel;
+    private final int keywordContain;
     // optional parameters
     private FragmentIndex componentFrag;
     private FragmentIndex tokenFrag;
@@ -37,6 +38,7 @@ public class FeatureParameter {
         private final boolean isThisLineEquation;
         private final boolean isThisLineTable;
         private final boolean applyModel;
+        private final int keywordContain;
         // optional parameters
         private FragmentIndex componentFrag;
         private FragmentIndex tokenFrag;
@@ -50,12 +52,13 @@ public class FeatureParameter {
 
         private Model model = null;
 
-        public Builder(DEPTree tree_, boolean isThisLineCode_, boolean isThisLineEquation_, boolean isThisLineTable_, boolean applyModel_) {
+        public Builder(DEPTree tree_, boolean isThisLineCode_, int keywordContain_, boolean isThisLineEquation_, boolean isThisLineTable_, boolean applyModel_) {
             this.tree = tree_;
             this.isThisLineCode = isThisLineCode_;
             this.isThisLineEquation = isThisLineEquation_;
             this.isThisLineTable = isThisLineTable_;
             this.applyModel = applyModel_;
+            this.keywordContain = keywordContain_;
 
         }
 
@@ -112,6 +115,7 @@ public class FeatureParameter {
         this.isThisLineCode = builder.isThisLineCode;
         this.isThisLineEquation = builder.isThisLineEquation;
         this.isThisLineTable = builder.isThisLineTable;
+        this.keywordContain = builder.keywordContain;
         this.tree = builder.tree;
         this.tagType = builder.tagType;
         this.excludeCode = builder.excludeCode;
@@ -161,6 +165,10 @@ public class FeatureParameter {
         if(!excludeMisc)
             if(prediction >= TagConstant.BEGINMISC && prediction <= TagConstant.ENDMISC) return true;
         return true;
+    }
+
+    public int getKeywordContain() {
+        return keywordContain;
     }
 
 }

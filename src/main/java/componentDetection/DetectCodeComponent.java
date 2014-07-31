@@ -16,6 +16,7 @@ import java.util.regex.Pattern;
    5. Comment: Presence of "comment" syntax (/*, //, etc): /* multi-line comment 
    6. Operator: Uncommon characters/operators: +, *, &, &&, |, ||, <, >, ==, !=, >=, <=, >>, <<, ::, __
    7. camelCase: camelCase text in the post.
+   8. keywordContain: how many keywords the given sentence contains.
  * 
  */
 
@@ -26,6 +27,13 @@ public class DetectCodeComponent {
     static Pattern bracketPattern =  Pattern.compile("\\w*\\(\\)");
     static Pattern camalCasePattern = Pattern.compile("[a-z]+[A-Z][a-z]+");
     static Pattern underscorePattern = Pattern.compile("\\w+\\_\\w+");
+
+    static String[] reservedKeywords = {"abstract", "assert", "boolean", "break", "byte", "case", "catch",
+    "char", "class", "const", "continue", "default", "do", "double", "else", "enum", "extends", "final",
+    "finally", "float", "for", "goto", "if", "implements", "import", "instanceof", "int", "interface", "long",
+    "native", "new", "package", "private", "protected", "public", "return", "short", "static", "super", "switch", "synchronized", "this",
+    "throw", "throws", "transient", "try", "void", "volatile", "while", "false", "null", "true"};
+
     public static void main(String[] args) throws Exception {
         // the original directory that contains files whose codes shall be removed
 		String dir = "/Users/mhjang/Documents/teaching_documents/extracted/stemmed/";
@@ -57,6 +65,13 @@ public class DetectCodeComponent {
         System.out.println(count + " lines of codes are removed!");
 	}
 
+    public static int keywordContainSize(String line) {
+        int size = 0;
+        for (int i = 0; i < reservedKeywords.length; i++) {
+            if (line.contains(reservedKeywords[i])) size++;
+        }
+        return size;
+    }
     // return true if at least one of the token in the line has a true property of one of the rules
     public static boolean isCodeLine(String line) {
         String[] tokens = line.split(" ");

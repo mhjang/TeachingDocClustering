@@ -24,6 +24,8 @@ import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import Classify.liblinear.FeatureExtractor;
+
 /**
  * Created by mhjang on 4/27/14.
  */
@@ -31,8 +33,10 @@ import java.util.regex.Pattern;
 
 public class MaxEntFeatureExtractor {
 
+    // 7/31/14: change this implementation to use FeatureExtractor to extract features
+    // composition design
 
-
+    FeatureExtractor fe = new FeatureExtractor();
     static String initiatedTag = null;
     static String[] tags = {TagConstant.codeTag, TagConstant.tableTag, TagConstant.equTag, TagConstant.miscTag};
 
