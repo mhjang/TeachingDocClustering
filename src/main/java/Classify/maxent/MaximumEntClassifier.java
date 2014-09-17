@@ -9,7 +9,7 @@ import java.util.LinkedList;
 /**
  * Created by mhjang on 7/17/14.
  */
-public class MaxEntClassifier {
+public class MaximumEntClassifier {
 
     public void convertToMaxentFormat(LinkedList<String> context, LinkedList<LinkedList<String>> features, boolean isTraining, String filename) throws IOException {
         SimpleFileWriter sw = new SimpleFileWriter(filename);

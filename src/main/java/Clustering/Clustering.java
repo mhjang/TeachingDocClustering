@@ -29,7 +29,7 @@ public class Clustering {
         File file = new File("noise_20.txt");
         FileOutputStream fos = new FileOutputStream(file);
         PrintStream ps = new PrintStream(fos);
-        System.setOut(ps);
+  //      System.setOut(ps);
 
         /***
          * Setting the parameters
@@ -45,7 +45,7 @@ public class Clustering {
 
         // parameter: whether to use Google N-gram
         TFIDFCalculator tfidf = new TFIDFCalculator(true);
-        tfidf.calulateTFIDF(TFIDFCalculator.LOGTFIDF, "/Users/mhjang/Documents/teaching_documents/extracted/stemmed/parsed/gold/feature_tokens", Tokenizer.UNIGRAM, false);
+        tfidf.calulateTFIDF(TFIDFCalculator.LOGTFIDF, "/Users/mhjang/Documents/teaching_documents/extracted/stemmed/parsed/gold/parsed/feature_tokens", Tokenizer.UNIGRAM, false);
          DocumentCollection dc = tfidf.getDocumentCollection();
  //       DocumentCollection dc = tfidf.getDocumentCollection("/Users/mhjang/Documents/teaching_documents/extracted/stemmed/parsed/noise_removed", Tokenizer.TRIGRAM, false);
 
@@ -60,7 +60,7 @@ public class Clustering {
          * by default, k = 50
          * NOTE that this method NULLIFIES bigrams and trigrams.
          */
-        LanguageModeling lm = new LanguageModeling(dc, 20, 0.7, 0.2);
+        LanguageModeling lm = new LanguageModeling(dc, 30, 0.7, 0.2);
 //        lm.run();
         lm.selectHighTFTerms();
         //  lm.TFIDFBaselineRun();
@@ -126,14 +126,14 @@ public class Clustering {
 
 
         TFIDFCalculator tfidf2 = new TFIDFCalculator(true);
-        tfidf2.calulateTFIDF(TFIDFCalculator.LOGTFIDF, "/Users/mhjang/Documents/teaching_documents/extracted/stemmed/parsed/gold/feature_tokens_manual", Tokenizer.UNIGRAM, false);
+        tfidf2.calulateTFIDF(TFIDFCalculator.LOGTFIDF, "/Users/mhjang/Documents/teaching_documents/extracted/stemmed/parsed/gold/parsed/noise_removed/", Tokenizer.UNIGRAM, false);
         DocumentCollection dc2 = tfidf2.getDocumentCollection();
         //       DocumentCollection dc = tfidf.getDocumentCollection("/Users/mhjang/Documents/teaching_documents/extracted/stemmed/parsed/noise_removed", Tokenizer.TRIGRAM, false);
 
         documentMap = dc2.getDocumentSet();
         termOccurrenceDic = dc2.getglobalTermCountMap();
 
-        LanguageModeling lm2 = new LanguageModeling(dc2, 20, 0.7, 0.2);
+        LanguageModeling lm2 = new LanguageModeling(dc2, 30, 0.7, 0.2);
 //        lm.run();
         lm2.selectHighTFTerms();
         Clustering clustering2 = new Clustering(dc2);
@@ -142,7 +142,7 @@ public class Clustering {
         ClusteringFMeasure cfm2 = new ClusteringFMeasure(clusters2, clusterLabelMap, topiclist, "./goldstandard/goldstandard_v2.csv", dc2);
         cfm2.computeAccuracy();
 
-        cfm2.errorAnalysis(clusters, clusters2);
+    //    cfm2.errorAnalysis(clusters, clusters2);
         kmeans2.printCluster(clusters, topiclist);
         kmeans2.printCluster(clusters2, topiclist);
         //      HashMap<String, LinkedList<String>> clusters = kmeans.convertToTopicMap(kmeans.clusterRunWithSignatureVector(10, 0.05, dc.constructSignatureVector(25)));

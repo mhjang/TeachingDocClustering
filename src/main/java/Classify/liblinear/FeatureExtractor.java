@@ -30,6 +30,7 @@ public class FeatureExtractor {
 
     static String initiatedTag = null;
     static String[] tags = {TagConstant.codeTag, TagConstant.tableTag, TagConstant.equTag, TagConstant.miscTag};
+  //  static String[] tags = {TagConstant.codeTag};
     static String[] closetags = {TagConstant.codeCloseTag, TagConstant.tableCloseTag, TagConstant.equCloseTag, TagConstant.miscCloseTag};
 
     HashSet<DEPNode> traversedNodes;
@@ -123,21 +124,34 @@ public class FeatureExtractor {
         SVMClassifier svm = new SVMClassifier();
         final boolean useAnnotation = false;
         final boolean useModel = true;
-        String baseDir = "/Users/mhjang/Desktop/clearnlp/allslides/";
+        final boolean writeModel = true;
+   //     String baseDir = "/Users/mhjang/Desktop/clearnlp/allslides/";
+        String baseDir = "/Users/mhjang/Desktop/clearnlp/all/";
+   //     String baseDir = "/Users/mhjang/Documents/teaching_documents/extracted/stemmed/parsed/gold/feature_tokens/";
         // routine 1: do five fold cross validation with annotation to evaluate the accuracy
-        svm.runFiveFoldCrossValidation("/Users/mhjang/Desktop/clearnlp/allslides/", useAnnotation);
+        svm.runFiveFoldCrossValidation(baseDir, useAnnotation, writeModel);
 
         // routine 2: use all data for learning a model and use the model for five fold cross validation by predicting "previous_label" field
-        String modelOutput = "slide_model_0723";
- //       svm.learnModel(baseDir, modelOutput);
- //       svm.runFiveFoldCrossValidation(baseDir, useModel);
+        String firstModel = "slide_model_0723";
+        String secondModel = "final_slide_model";
+   //     svm.learnFirstModel(baseDir, firstModel);
+   //     svm.learnSecondModel(baseDir, firstModel, secondModel);
+   //     svm.runFiveFoldCrossValidation(baseDir, useModel, false);
 
         // routine 3: apply the learned model to generate the noise-free version of documents
-//        svm.applyModelToDocuments(modelOutput);
+   //     svm.applyModelToDocuments(firstModel, secondModel);
 
 
     }
 
+    public HashMap<String, Integer> getFeatureDictionary() {
+        return featureMap;
+    }
+
+
+    public HashMap<Integer, String> getFeatureInverseDictionary() {
+        return featureinverseMap;
+    }
 
     int getFeatureIndex(String word) {
         if (featureMap.containsKey(word))
@@ -177,15 +191,27 @@ public class FeatureExtractor {
      * @return
      * @throws java.io.IOException
      */
-    public void prepareFeatureForDocuments(String dir, Model model) throws IOException {
+    public void prepareFeatureForDocuments(String dir) throws IOException {
         //     read all annotated files from the directory
         //     String directory = "/Users/mhjang/Desktop/clearnlp/trainingdata/annotation/";
         // String parsedDir = "/Users/mhjang/Documents/teaching_documents/extracted/stemmed/parsed/";
         String noiseRemovedline;
         ArrayList<Double> ratios = new ArrayList<Double>();
-        componentCount = new int[5];
-        DirectoryReader dr = new DirectoryReader(dir);
+        componentCount = new int[TagConstant.ENDMISC+1];
+        System.out.println(dir);
+        String featureTokenDir = dir + "feature_tokens/";
+        String parsingDir = dir + "parsed/";
+
+        DirectoryReader dr = new DirectoryReader(parsingDir);
         this.model = model;
+
+
+    //    String featureTokenDir = dir + "annotation/";
+    //    String featureTokenDir = dir + "feature_tokens/";
+    //    String outputDir = dir + "noise_removed/";
+        String outputDir = dir + "removed_tokens/";
+        System.out.println("printing at " + outputDir);
+
         try {
             for (String filename : dr.getFileNameList()) {
                 removedNode = 0;
@@ -194,7 +220,9 @@ public class FeatureExtractor {
 
                 if (filename.contains(".DS_Store")) continue;
                 // open a corresponding parsed file
-                reader.open(UTInput.createBufferedFileReader(dir + filename));
+                if (!filename.endsWith(".cnlp")) continue;
+                reader.open(UTInput.createBufferedFileReader(parsingDir+ filename));
+                System.out.println(parsingDir+ filename);
                 DEPTree tree;
                 ArrayList<DEPTree> treelist = new ArrayList<DEPTree>();
                 while ((tree = reader.next()) != null) {
@@ -205,12 +233,11 @@ public class FeatureExtractor {
                 int treeIdx = 0;
                 String line;
                 String filename_ = filename.replace(".cnlp", "");
-                String featureTokenDir = dir + "feature_tokens/";
-                String outputDir = dir + "noise_removed/";
+         //       System.out.println("printing at " + outputDir);
                 SimpleFileReader freader = new SimpleFileReader(featureTokenDir + filename_);
                 SimpleFileWriter fwriter = new SimpleFileWriter(outputDir + filename_);
 
-                System.out.println(filename);
+           //     System.out.println(filename);
 
                 boolean isTagBeginLine = false, tagClosed = false;
                 String endTag = null;
@@ -221,7 +248,7 @@ public class FeatureExtractor {
                     if (!line.isEmpty()) {
                         LinkedList<String> tokens = new LinkedList<String>();
                         int startIdx = 0;
-                        FeatureParameter param = new FeatureParameter.Builder(treelist.get(treeIdx), DetectCodeComponent.isCodeLine(line), DetectCodeComponent.keywordContainSize(line),DetectEquation.isEquation(line), DetectTable.isTable(line), true).build();
+                        FeatureParameter param = new FeatureParameter.Builder(treelist.get(treeIdx), DetectCodeComponent.codeLineEvidence(line), DetectCodeComponent.keywordContainSize(line),DetectEquation.isEquation(line), DetectTable.isTable(line), true).build();
                         noiseRemovedline = generateApplyFeatures(param);
                         treeIdx++;
                         fwriter.writeLine(noiseRemovedline);
@@ -230,10 +257,11 @@ public class FeatureExtractor {
                 }
                 fwriter.close();
                 double ratio = (double) removedNode / (double) (removedNode + remainingNode);
-                System.out.println("Noise Ratio: " + ratio);
+ //               System.out.println("Noise Ratio: " + ratio);
                 ratios.add(ratio);
                 // print the number of components predicted
                 int sum = 0;
+                System.out.print(filename + "\t");
                 for (int i = 0; i < 5; i++) {
                     sum += componentCount[i];
                     System.out.print(componentCount[i] + "\t");
@@ -251,7 +279,7 @@ public class FeatureExtractor {
         for (Double d : ratios) {
             ratioSum += d;
         }
-        System.out.println("Average removed noise ratio: " + ratioSum / (double) ratios.size());
+   //     System.out.println("Average removed noise ratio: " + ratioSum / (double) ratios.size());
     }
 
     private Model loadModel() {
@@ -270,7 +298,7 @@ public class FeatureExtractor {
      * @return
      * @throws java.io.IOException
      */
-    public LinkedList<Feature[]> generateClassifyFeatures(String baseDir, ArrayList<String> data, boolean applyModel) throws IOException {
+    public LinkedList<Feature[]> generateClassifyFeaturesTokenBased(String baseDir, ArrayList<String> data, boolean applyModel) throws IOException {
         //     read all annotated files from the directory
         //     String directory = "/Users/mhjang/Desktop/clearnlp/trainingdata/annotation/";
         // baseDir = "/Users/mhjang/Desktop/clearnlp/allslides/";
@@ -376,7 +404,15 @@ public class FeatureExtractor {
                             if (tagClosed) endToken = componentEnd;
                         }
                         if (treeIdxSkip) continue;
-                        FeatureParameter param = new FeatureParameter.Builder(treelist.get(treeIdx), DetectCodeComponent.isCodeLine(line), DetectCodeComponent.keywordContainSize(line), DetectEquation.isEquation(line), DetectTable.isTable(line), applyModel).componentFrag(new FragmentIndex(componentBegin, componentEnd)).tagType(initiatedTag).tokenLocation(new FragmentIndex(beginToken, endToken)).build();
+                        int keywordContain = DetectCodeComponent.keywordContainSize(line);
+                        FeatureParameter param;
+                     /*   if(initiatedTag != null && initiatedTag == TagConstant.codeTag)
+                                param = new FeatureParameter.Builder(treelist.get(treeIdx), DetectCodeComponent.isCodeLine(line), keywordContain, DetectEquation.isEquation(line), DetectTable.isTable(line), applyModel).componentFrag(new FragmentIndex(componentBegin, componentEnd)).tagType(initiatedTag).tokenLocation(new FragmentIndex(beginToken, endToken)).build();
+                        else
+                                param = new FeatureParameter.Builder(treelist.get(treeIdx), DetectCodeComponent.isCodeLine(line), keywordContain, DetectEquation.isEquation(line), DetectTable.isTable(line), applyModel).componentFrag(new FragmentIndex(componentBegin, componentEnd)).tagType(null).tokenLocation(new FragmentIndex(beginToken, endToken)).build();
+                        */
+                        param = new FeatureParameter.Builder(treelist.get(treeIdx), DetectCodeComponent.codeLineEvidence(line), keywordContain, DetectEquation.isEquation(line), DetectTable.isTable(line), applyModel).componentFrag(new FragmentIndex(componentBegin, componentEnd)).tagType(initiatedTag).tokenLocation(new FragmentIndex(beginToken, endToken)).build();
+
                         buildFeatureVectorForTree(param);
                         numOfTokensInDoc += treelist.get(treeIdx).size() - 1;
                         if (tagClosed) {
@@ -450,6 +486,7 @@ public class FeatureExtractor {
 
             int charlen = node.form.length();
             features.add(new FeatureNode(getFeatureIndex(CHAR_LEN), charlen));
+
         }
 
         if (ngramFeatureOn) {
@@ -461,6 +498,7 @@ public class FeatureExtractor {
                 features.add(new FeatureNode(getFeatureIndex(node.form), 1));
                 featureIndex.add(featureIndx);
             }
+
             // bi-gram - previous token
 
             featureIndx = getFeatureIndex("P_" + tree.get(i - 1).form);
@@ -548,12 +586,12 @@ public class FeatureExtractor {
             /**
              * Is this line of the token a code line?
              */
-            features.add(new FeatureNode(getFeatureIndex(IS_CODELINE), param.isThisLineCode() ? 1 : 0));
+            features.add(new FeatureNode(getFeatureIndex(IS_CODELINE), param.isThisLineCode()));
 
             /**
              * How many programming keywords does this line contain?
              */
-            features.add(new FeatureNode(getFeatureIndex(KEYWORD_CONTAIN), param.getCurrentIndex()));
+            features.add(new FeatureNode(getFeatureIndex(KEYWORD_CONTAIN), param.getKeywordContain()));
         }
 
         /****************************
@@ -711,16 +749,18 @@ public class FeatureExtractor {
                     answers[featureIdx] = component.intermediate;
                 else
                     answers[featureIdx] = TagConstant.TEXT;
+
             } else {
                 answers[featureIdx] = TagConstant.TEXT;
             }
+
             Collections.sort(features, fc);
             Feature[] featureArray;
             featureArray = features.toArray(new Feature[features.size()]);
 
             // save current prediction to use as a feature for the next label
             if (param.isApplyModel()) {
-                previousNodePrediction = Linear.predict(model, featureArray);
+                previousNodePrediction = Linear.predict(FeatureParameter.firstModel, featureArray);
             }
             featureIdx++;
             allFeatures.add(featureArray);
@@ -739,12 +779,13 @@ public class FeatureExtractor {
 
             Feature[] featureArray;
             featureArray = features.toArray(new Feature[features.size()]);
-            int prediction = (int) Linear.predict(model, featureArray);
-            if (!param.isNoise(prediction))
+            int prediction = (int) Linear.predict(FeatureParameter.secondModel, featureArray);
+            if (param.isNoise(prediction))
                 noiseRemovedLine.append(tree.get(i).form + " ");
-            else {
-                System.out.println(TagConstant.getTagLabel(prediction) + ": "  + tree.get(i).form);
-            }
+        //    else {
+        //        System.out.println(TagConstant.getTagLabel(prediction) + ": "  + tree.get(i).form);
+        //cd    }
+            componentCount[prediction]++;
 
         }
         return noiseRemovedLine.toString();
