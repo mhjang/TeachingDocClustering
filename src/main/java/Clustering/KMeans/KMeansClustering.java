@@ -22,6 +22,8 @@ public class KMeansClustering extends Clustering{
         centroids = initCentroid();
     }
 
+
+
     public KMeansClustering(HashMap<String, Document> centroidFeatures, DocumentCollection dc) throws IOException {
         super(dc);
         this.dc = dc;

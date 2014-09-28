@@ -139,7 +139,6 @@ public class DetectTable {
     }
     // encode the line by type
     public static String encodeString(String line) {
-
         ArrayList<String> tokens = parenthesisTokenizer(line);
         StringBuilder sb = new StringBuilder();
         for(String word: tokens) {
@@ -193,6 +192,38 @@ public class DetectTable {
         }
     }
 
+    public static double getRatioRightMatching(String line, String prevLine) {
+        int n = line.length();
+        int m = prevLine.length();
+        int size = min(n, m);
+
+        int i=0, count =0;
+        while(i<size) {
+            if(line.charAt(n-1-i) == prevLine.charAt(m-1-i)) count++;
+            else break;
+            i++;
+        }
+        double ratio = (double) count/ (double) n;
+        if(Double.isNaN(ratio)) return 0.0;
+        else return ratio;
+    }
+
+    public static double getRatioLeftMatching(String line, String prevLine) {
+        int n = line.length();
+        int m = prevLine.length();
+        int size = min(n, m);
+
+        int i=0, count =0;
+        while(i<size) {
+            if(line.charAt(i) == prevLine.charAt(i)) count++;
+            else break;
+            i++;
+        }
+        double ratio = (double) count/ (double) n;
+        if(Double.isNaN(ratio)) return 0.0;
+        else return ratio;
+    }
+
     /**
      * Cases like (71. 5) (83.3) ==> tokenize 71.5, 83.3.
      * We can't use Tokenizer("()") because there can be a space inside the parenthesis
@@ -240,7 +271,7 @@ public class DetectTable {
 
     public static String removeSpecialCharacters(String s) {
         char[] sarray = s.toCharArray();
-        char[] specialCharacters = {'(',')','!','@','#','$','%','^','&','*','{','}','\'',':','\"','+','-'};
+        char[] specialCharacters = {'(',')','!','@','#','$','%','^','&','*','{','}','\'',':','\"','+','-', '.', ','};
         StringBuilder sb = new StringBuilder();
         for(int i = 0; i< sarray.length; i++) {
             boolean flag = false;
@@ -289,6 +320,13 @@ public class DetectTable {
     public static String restoreParenthesis(String line) {
         line = line.replaceAll("\\(\\s", "(");
         line = line.replaceAll("\\s\\)", ")");
+
+        line = line.replaceAll("\\{\\s", "{");
+        line = line.replaceAll("\\s\\}", "}");
+
+        line = line.replaceAll("\\[\\s", "[");
+        line = line.replaceAll("\\s\\]", "]");
+
         return line;
 
     }

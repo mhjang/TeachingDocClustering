@@ -28,7 +28,7 @@ public class DirectoryReader {
 
         final File folder = new File(dir);
         filenames = new ArrayList<String>();
-
+        System.out.println("reading " + folder.getAbsolutePath());
         readFiles(folder);
 
     }

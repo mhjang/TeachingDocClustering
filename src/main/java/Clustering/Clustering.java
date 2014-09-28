@@ -116,7 +116,8 @@ public class Clustering {
         }
 */
    //     KMeansClustering kmeans = new KMeansClustering(clustering.getClusterFeatures(), dc);
-        KMeansClustering kmeans = new KMeansClustering(topiclist, dc);
+        //    KMeansClustering kmeans = new KMeansClustering(topiclist, dc);
+        KMeansClustering kmeans = new KMeansClustering(readTopicClustersACL("/Users/mhjang/Desktop/clearnlp/dataset/acl/clustertopics.txt"), dc);
         HashMap<String, LinkedList<String>> clusters = kmeans.convertToTopicMap(kmeans.clusterRun(10, 0.05));
   //      HashMap<String, LinkedList<String>> clusters = kmeans.convertToTopicMap(kmeans.clusterRunWithSignatureVector(10, 0.05, dc.constructSignatureVector(25)));
         ClusteringFMeasure cfm = new ClusteringFMeasure(clusters, clusterLabelMap, topiclist, "./goldstandard/goldstandard_v2.csv", dc);
@@ -220,7 +221,51 @@ public class Clustering {
     }
 
 
+    // 2014/9/25
+    // We don't really need hashmap keys, but had to make a fake key to fit in KMeansClustering constructor's parameters
+    public static HashMap<String, Document>  readTopicClustersACL(String goldDir) {
+        HashMap<String, Document> topics = new HashMap<String, Document>();
+//        HashMap<String, HashSet<String>> goldstandard = readGoldstandardACLDataset("/Users/mhjang/Desktop/clearnlp/dataset/acl/goldstandard.txt");
+        try {
+            BufferedReader br = new BufferedReader(new FileReader(goldDir));
+            String line;
+            HashMap<String, Integer> topicClusterMap = new HashMap<String, Integer>();
+            LinkedList<String> tokenSet = new LinkedList<String>();
+            int clusterId = 0;
+            while ((line = br.readLine()) != null) {
+                if (line.trim().length() > 0) {
+                    topicClusterMap.put(line, clusterId);
+                    String[] tokens = line.split("\\/| |\\,");
+                    for (int i = 0; i < tokens.length; i++) {
+                        if (!tokenSet.contains(tokens[i]))
+                            tokenSet.add(tokens[i].toLowerCase());
+                    }
+                    topicClusterMap.put(line, clusterId);
+                    //      System.out.println(line + ": " + clusterId);
+                    //     HashSet<String> docs = goldstandard.get(line);
+                    //     for(String doc : docs) {
+                    ////         System.out.print(doc + ", ");
+                    //     }
+                    //     System.out.println();
 
+                } else {
+                    if (tokenSet.size() > 0) {
+                        Document document = new Document(tokenSet);
+                        //           document.printTerms();
+                        tokenSet = new LinkedList<String>();
+                        topics.put(String.valueOf(clusterId), document);
+                        clusterId++;
+                    } else {
+                        continue;
+
+                    }
+                }
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return topics;
+    }
 
 
     /**

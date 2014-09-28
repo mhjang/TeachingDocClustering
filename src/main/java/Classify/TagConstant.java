@@ -78,6 +78,11 @@ public class TagConstant {
 
     }
 
+    static public String[] getTags() {
+        String[] tags = {tableTag, codeTag, equTag, miscTag, tableCloseTag, codeCloseTag, equCloseTag, miscCloseTag, textTag};
+        return tags;
+    }
+
     /**
      * for printing out test output
      * @param tagIdx

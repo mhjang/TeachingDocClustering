@@ -1,5 +1,6 @@
 package evaluation;
 
+import Clustering.Document;
 import Clustering.DocumentCollection;
 import componentDetection.DetectCodeComponent;
 
@@ -85,8 +86,80 @@ public class ClusteringFMeasure {
         }
     }
 
+    public HashMap<String, HashSet<String>> readGoldstandardACLDataset (String goldDir) {
+        HashMap<String, HashSet<String>> goldstandard = null;
+        try {
+            BufferedReader br = new BufferedReader(new FileReader(goldDir));
+            String line;
+            goldstandard = new HashMap<String, HashSet<String>>();
 
-    // read goldstandard
+            while ((line = br.readLine()) != null) {
+                if (line.length() > 0) {
+                    line = line.trim();
+                    String filename = line.substring(line.length() - 8, line.length());
+                    String title = line.substring(0, line.indexOf('-')).trim();
+                    if (goldstandard.containsKey(title)) {
+                        goldstandard.get(title).add(filename);
+                    } else {
+                        goldstandard.put(title, new HashSet<String>());
+                        goldstandard.get(title).add(filename);
+                    }
+                    System.out.println(title + ":" + filename);
+                }
+            }
+            System.out.println("set size: " + goldstandard.size());
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return goldstandard;
+
+    }
+
+    public void readTopicClustersACL(String goldDir) {
+        LinkedList<Document> topics = new LinkedList<Document>();
+//        HashMap<String, HashSet<String>> goldstandard = readGoldstandardACLDataset("/Users/mhjang/Desktop/clearnlp/dataset/acl/goldstandard.txt");
+        try {
+            BufferedReader br = new BufferedReader(new FileReader(goldDir));
+            String line;
+            HashMap<String, Integer> topicClusterMap = new HashMap<String, Integer>();
+            LinkedList<String> tokenSet = new LinkedList<String>();
+            int clusterId = 0;
+            while ((line = br.readLine()) != null) {
+                if (line.trim().length() > 0) {
+                    topicClusterMap.put(line, clusterId);
+                    String[] tokens = line.split("\\/| |\\,");
+                    for (int i = 0; i < tokens.length; i++) {
+                        if (!tokenSet.contains(tokens[i]))
+                            tokenSet.add(tokens[i].toLowerCase());
+                    }
+                    topicClusterMap.put(line, clusterId);
+              //      System.out.println(line + ": " + clusterId);
+               //     HashSet<String> docs = goldstandard.get(line);
+               //     for(String doc : docs) {
+               ////         System.out.print(doc + ", ");
+               //     }
+               //     System.out.println();
+
+                } else {
+                    if (tokenSet.size() > 0) {
+                        Document document = new Document(tokenSet);
+             //           document.printTerms();
+                        tokenSet = new LinkedList<String>();
+                        topics.add(document);
+                        clusterId++;
+                    } else {
+                        continue;
+
+                    }
+                }
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return topics;
+    }
+
+    // read goldstandard for slide data
     public  HashMap<Integer, HashSet<String>> readGoldstandard(String goldDir) {
         HashMap<Integer, HashSet<String>> goldstandard = null;
         Integer clusterID = 0;

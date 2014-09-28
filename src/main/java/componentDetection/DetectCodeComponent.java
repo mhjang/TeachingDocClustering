@@ -1,7 +1,11 @@
 package componentDetection;
 
+import com.google.common.collect.HashMultiset;
+import com.google.common.collect.Multiset;
+
 import java.io.*;
 import java.math.BigDecimal;
+import java.util.ArrayList;
 import java.util.StringTokenizer;
 import java.util.regex.Pattern;
 
@@ -25,7 +29,7 @@ public class DetectCodeComponent {
 
     static Pattern copyrightPattern = Pattern.compile("[\\w-]+\\@([\\w-]+\\.)+[\\w-]+");
     static Pattern parenthesisPattern = Pattern.compile("\\w*\\[\\w*\\]");
-    static Pattern bracketPattern =  Pattern.compile("\\w*\\(\\)");
+    static Pattern bracketPattern =  Pattern.compile("[\\{\\[]\\w*\\(\\w*\\)[\\}\\]]");
     static Pattern camalCasePattern = Pattern.compile("[a-z]+[A-Z][a-z]+");
     static Pattern underscorePattern = Pattern.compile("\\w+\\_\\w+");
 
@@ -103,6 +107,55 @@ public class DetectCodeComponent {
         */
 	}
 
+
+
+    public static Multiset<String> getCodeEvidence(String line) {
+        Multiset<String> codeDetect = HashMultiset.create();
+        String rline = DetectTable.restoreParenthesis(line);
+        ArrayList<String> tokens = DetectTable.parenthesisTokenizer(rline);
+        for(String term: tokens) {
+            codeDetect.add("IS_BRACKET", DetectCodeComponent.isBracket(term) ? 1 : 0);
+            /**
+             * Is this token a Camal case variable name?
+             */
+
+            // features.add(new FeatureNode(getFeatureIndex(IS_VARIABLE), DetectCodeComponent.isVariable(node.form) ? 1 : 0));
+            codeDetect.add("IS_VARIABLE", DetectCodeComponent.isVariable(term) ? 1 : 0);
+
+            /**
+             * Is this token a comment "//"?
+             */
+
+            // features.add(new FeatureNode(getFeatureIndex(IS_COMMENT), DetectCodeComponent.isComment(node.form) ? 1 : 0));
+            codeDetect.add("IS_COMMENT", DetectCodeComponent.isComment(term) ? 1 : 0);
+
+            /**
+             * Is this token a programming operator?
+             */
+
+            // features.add(new FeatureNode(getFeatureIndex(IS_OPERATOR), DetectCodeComponent.isOperator(node.form) ? 1 : 0));
+            codeDetect.add("IS_OPERATOR", DetectCodeComponent.isOperator(term) ? 1 : 0);
+
+            /**
+             * Is this token a parenthesis?
+             */
+
+            //  features.add(new FeatureNode(getFeatureIndex(IS_PARENTHESIS), DetectCodeComponent.isParenthesis(node.form) ? 1 : 0));
+            codeDetect.add("IS_PARENTHESIS", DetectCodeComponent.isParenthesis(term) ? 1 : 0);
+
+            /**
+             * Is this token a parenthesis?
+             */
+
+            //     features.add(new FeatureNode(getFeatureIndex(IS_SEMICOLON), DetectCodeComponent.isSemicolon(node.form) ? 1 : 0));
+            codeDetect.add("IS_SEMICOLON", DetectCodeComponent.isSemicolon(term) ? 1 : 0);
+
+            // keyword contain
+            codeDetect.add("KEYWORD_CONTAIN", DetectCodeComponent.isThisKeyword(term) ? 1 : 0);
+        }
+        return codeDetect;
+
+    }
     public static int keywordContainSize(String line) {
         int size = 0;
         String[] tokens = line.split(" ");
@@ -191,10 +244,16 @@ public class DetectCodeComponent {
 	}
 
     public static boolean isOperator(String line) {
-		String[] operators = {"+", "&&", "||", "<", ">", "==", "!=", ">=", "<=", ">>", "<<", "::", "__", "</"};
+		String[] operators = {"+", "&&", "||", "<", ">", "==", "!=", ">=", "<=", ">>", "<<", "::", "__", "</" };
 		for(int i=0; i<operators.length; i++) {
             if(line.contains(operators[i]))
                 return true;
+        }
+        if(line.length() == 1) {
+            Character ch = line.charAt(0);
+            if(Character.UnicodeBlock.of(ch) == Character.UnicodeBlock.MATHEMATICAL_OPERATORS ||
+                    Character.UnicodeBlock.of(ch) == Character.UnicodeBlock.MATHEMATICAL_ALPHANUMERIC_SYMBOLS ||
+                    Character.UnicodeBlock.of(ch) == Character.UnicodeBlock.GREEK) return true;
         }
         return false;
 	}

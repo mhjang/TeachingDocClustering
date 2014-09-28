@@ -48,6 +48,7 @@ def tokenize_fix(filename):
             line = line.replace(brokenCodeEndTag, codeEndTag)
             line = line.replace(brokenEquEndTag, equEndTag)
             line = line.replace(brokenMiscEndTag, miscEndTag)
+            line = line.replace("\n", "");
             line = line.replace("< BR >", "\n")
             l = line
             w.write(l)
@@ -69,7 +70,7 @@ def tokenize_fix(filename):
 #        | annotation 
 #        | original 
 
-taggedDir = "/Users/mhjang/Desktop/clearnlp/tagged"
+taggedDir = "/Users/mhjang/Desktop/clearnlp/dataset/acl"
 os.system("java com.clearnlp.run.Tokenizer -i " + taggedDir + " -ie .tagged")
 tokenizedDir = taggedDir  + "/tokenized/"
 
@@ -78,8 +79,9 @@ if not os.path.exists(tokenizedDir):
     os.makedirs(tokenizedDir)
 
 #print("find . -name \"*.tok\" -exec cp {} "+tokenizedDir+" \;")
+print("find . -name \"*.tok\" -exec cp {} "+tokenizedDir+" \;")
 os.system("find . -name \"*.tok\" -exec cp {} "+tokenizedDir+" \;")
-os.system("find . -name \"*.tok\" -exec rm {} \;")
+#os.system("find . -name \"*.tok\" -exec rm {} \;")
 
 # make "original" and "annotation" directory
 originalDir = taggedDir + "/original/"

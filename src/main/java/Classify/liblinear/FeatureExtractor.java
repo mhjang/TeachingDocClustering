@@ -129,17 +129,19 @@ public class FeatureExtractor {
         String baseDir = "/Users/mhjang/Desktop/clearnlp/all/";
    //     String baseDir = "/Users/mhjang/Documents/teaching_documents/extracted/stemmed/parsed/gold/feature_tokens/";
         // routine 1: do five fold cross validation with annotation to evaluate the accuracy
-        svm.runFiveFoldCrossValidation(baseDir, useAnnotation, writeModel);
+ //       svm.runFiveFoldCrossValidation(baseDir, useAnnotation, writeModel);
 
         // routine 2: use all data for learning a model and use the model for five fold cross validation by predicting "previous_label" field
-        String firstModel = "slide_model_0723";
-        String secondModel = "final_slide_model";
-   //     svm.learnFirstModel(baseDir, firstModel);
-   //     svm.learnSecondModel(baseDir, firstModel, secondModel);
+   //     String firstModel = "slide_model_0723";
+   //     String secondModel = "final_slide_model";
+        String firstModel = "acl_initial_model";
+        String secondModel = "acl_final_model";
+        svm.learnFirstModel(baseDir, firstModel);
+        svm.learnSecondModel(baseDir, firstModel, secondModel);
    //     svm.runFiveFoldCrossValidation(baseDir, useModel, false);
 
         // routine 3: apply the learned model to generate the noise-free version of documents
-   //     svm.applyModelToDocuments(firstModel, secondModel);
+        svm.applyModelToDocuments(firstModel, secondModel);
 
 
     }
@@ -321,7 +323,7 @@ public class FeatureExtractor {
                     treelist.add(tree);
 
                 }
-                // then open an annotation file
+                // then open an  file
                 int treeIdx = 0;
                 String line;
                 SimpleFileReader freader = new SimpleFileReader(annotationDir + filename);
