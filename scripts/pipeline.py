@@ -3,8 +3,8 @@ import os, codecs
 
 def tokenize_fix(filename):
     f = codecs.open(tokenizedDir + filename, "r", "utf-8")
-    offset = (len(".tagged.tok")) * -1
-
+#    offset = (len(".tagged.tok")) * -1
+    offset = (len(".tok")) * -1
     w = codecs.open(annotationDir+filename[:offset], "w", "utf-8")
     w2 = codecs.open(originalDir+filename[:offset], "w", "utf-8")
 
@@ -70,8 +70,9 @@ def tokenize_fix(filename):
 #        | annotation 
 #        | original 
 
-taggedDir = "/Users/mhjang/Desktop/clearnlp/dataset/acl"
-os.system("java com.clearnlp.run.Tokenizer -i " + taggedDir + " -ie .tagged")
+#taggedDir = "/Users/mhjang/Desktop/clustering/extracted/br"
+taggedDir = "./"
+os.system("java com.clearnlp.run.Tokenizer -i " + taggedDir + " -ie .txt")
 tokenizedDir = taggedDir  + "/tokenized/"
 
 # make a directory and move tokenized files 
@@ -104,14 +105,14 @@ if not os.path.exists(parsedDir):
 
 
 #os.system("python /Users/mhjang/Desktop/clearnlp/tokenizerFix.py "+ tokenizedDir)
-#os.system("java -XX:+UseConcMarkSweepGC -Xmx3g com.clearnlp.nlp.engine.NLPDecode -z dep -c /Users/mhjang/Desktop/clearnlp/configuration.xml -i "+originalDir + " -ie .txt")
+os.system("java -XX:+UseConcMarkSweepGC -Xmx5g com.clearnlp.nlp.engine.NLPDecode -z dep -c /Users/mhjang/Desktop/clearnlp/configuration.xml -i "+originalDir + " -ie .txt")
 
 print("find "+originalDir+"  -name \"*.cnlp\" -exec cp {} "+parsedDir + " \;")
 os.system("find "+originalDir+"  -name \"*.cnlp\" -exec cp {} "+parsedDir + " \;")
 os.system("find "+originalDir+"  -name \"*.cnlp\" -exec rm {} \;")
 
 # delete the tok files
-os.system("rm -r " + tokenizedDir)
+#os.system("rm -r " + tokenizedDir)
 
 
 # So, I ran ClearNLP tokenizer on the annotated files and now I have to fix all the broken file.

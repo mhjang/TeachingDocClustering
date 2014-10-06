@@ -1,4 +1,4 @@
-package Classify.liblinear;
+package Classify.liblinear.datastructure;
 
 import Classify.TagConstant;
 import com.clearnlp.dependency.DEPTree;
@@ -13,7 +13,7 @@ public class FeatureParameter {
     private final int isThisLineCode;
     private final boolean isThisLineEquation;
     private final boolean isThisLineTable;
-    private final boolean applyModel;
+    public static boolean predictPreviousNode = false;
     private final int keywordContain;
     // optional parameters
     private FragmentIndex componentFrag;
@@ -52,7 +52,6 @@ public class FeatureParameter {
         private final int isThisLineCode;
         private final boolean isThisLineEquation;
         private final boolean isThisLineTable;
-        private final boolean applyModel;
         private final int keywordContain;
         // optional parameters
         private FragmentIndex componentFrag;
@@ -75,7 +74,6 @@ public class FeatureParameter {
             this.isThisLineCode = isThisLineCode_;
             this.isThisLineEquation = isThisLineEquation_;
             this.isThisLineTable = isThisLineTable_;
-            this.applyModel = applyModel_;
             this.keywordContain = keywordContain_;
 
 
@@ -137,7 +135,6 @@ public class FeatureParameter {
     }
 
     private FeatureParameter(Builder builder) {
-        this.applyModel = builder.applyModel;
         this.componentFrag = builder.componentFrag;
         this.tokenFrag = builder.tokenFrag;
         this.isThisLineCode = builder.isThisLineCode;
@@ -157,7 +154,7 @@ public class FeatureParameter {
     }
 
     public boolean isApplyModel() {
-        return applyModel;
+        return predictPreviousNode;
     }
 
     public String getTagType() {return tagType;   }
@@ -208,10 +205,6 @@ public class FeatureParameter {
     public String getPrev_2_line() { return prev_2_line; }
 
 }
-
-
-
-
 
 
 

@@ -30,8 +30,9 @@ public class DetectTable {
     static Multiset<String> tablePatternBigram;
     public static void readStats() {
         try {
+            String baseDir = "/Users/mhjang/Desktop/clearnlp/acl/training/";
             tablePatternUnigram = HashMultiset.create();
-            BufferedReader br = new BufferedReader(new FileReader(new File("/Users/mhjang/Desktop/clearnlp/all/stats/table.1gram")));
+            BufferedReader br = new BufferedReader(new FileReader(new File(baseDir + "stats/table.1gram")));
             String line;
             while ((line = br.readLine()) != null) {
                 String[] tokens = line.split("\\t");
@@ -39,7 +40,7 @@ public class DetectTable {
             }
 
             tablePatternBigram = HashMultiset.create();
-            br = new BufferedReader(new FileReader(new File("/Users/mhjang/Desktop/clearnlp/all/stats/table.2gram")));
+            br = new BufferedReader(new FileReader(new File(baseDir + "stats/table.2gram")));
             while ((line = br.readLine()) != null) {
                 String[] tokens = line.split("\\t");
                 tablePatternBigram.add(tokens[0], Integer.parseInt(tokens[1]));

@@ -12,9 +12,8 @@ import java.util.StringTokenizer;
 public class Test {
 
     public static void main(String[] args) {
-        ClusteringFMeasure fm = new ClusteringFMeasure();
   //      fm.readGoldstandardACLDataset("/Users/mhjang/Desktop/clearnlp/dataset/acl/goldstandard.txt");
-        fm.readTopicClustersACL("/Users/mhjang/Desktop/clearnlp/dataset/acl/clustertopics.txt");
+    //    fm.readTopicClustersACL("/Users/mhjang/Desktop/clearnlp/dataset/acl/clustertopics.txt");
    /*     String s = "n=5 80.74 80.88 81.03 81.05 83.17";
         String s1 = "(line 5) (71. 7) (73. 4) (73.3) (74.6) a b";
 

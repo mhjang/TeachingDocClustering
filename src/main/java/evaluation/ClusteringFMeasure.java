@@ -17,6 +17,8 @@ import java.util.HashSet;
 public class ClusteringFMeasure {
 
     HashMap<String, LinkedList<String>> clusters;
+    HashMap<Integer, LinkedList<String>> aclclusters;
+
     HashMap<String, Integer> clusterLabelMap;
     HashMap<Integer, HashSet<String>> goldClusters;
     HashSet<String> goldpool = new HashSet<String>();
@@ -32,8 +34,11 @@ public class ClusteringFMeasure {
         this.dc = dc;
     }
 
-    public ClusteringFMeasure() {
-
+    // this is a horrible constructor design... refactor later
+    public ClusteringFMeasure(HashMap<Integer, LinkedList<String>> clusters_, String goldDir, DocumentCollection dc) {
+        aclclusters = clusters_;
+        goldClusters = readGoldstandard(goldDir);
+        this.dc = dc;
     }
 
 
@@ -86,28 +91,27 @@ public class ClusteringFMeasure {
         }
     }
 
-    public HashMap<String, HashSet<String>> readGoldstandardACLDataset (String goldDir) {
-        HashMap<String, HashSet<String>> goldstandard = null;
+    public HashMap<Integer, HashSet<String>> readGoldstandardACLDataset (String goldDir) {
+        HashMap<Integer, HashSet<String>> goldstandard = null;
+        HashMap<String, Integer> topics = readTopicClustersACL("/Users/mhjang/Desktop/clearnlp/dataset/acl/clustertopics.txt");
         try {
             BufferedReader br = new BufferedReader(new FileReader(goldDir));
             String line;
-            goldstandard = new HashMap<String, HashSet<String>>();
+            goldstandard = new HashMap<Integer, HashSet<String>>();
 
             while ((line = br.readLine()) != null) {
                 if (line.length() > 0) {
                     line = line.trim();
                     String filename = line.substring(line.length() - 8, line.length());
                     String title = line.substring(0, line.indexOf('-')).trim();
-                    if (goldstandard.containsKey(title)) {
-                        goldstandard.get(title).add(filename);
+                    Integer clusterId = topics.get(title);
+                    if(!goldstandard.containsKey(clusterId)) {
+                        goldstandard.put(clusterId, new HashSet<String>());
                     } else {
-                        goldstandard.put(title, new HashSet<String>());
-                        goldstandard.get(title).add(filename);
+                        goldstandard.get(clusterId).add(filename);
                     }
-                    System.out.println(title + ":" + filename);
                 }
             }
-            System.out.println("set size: " + goldstandard.size());
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -115,13 +119,16 @@ public class ClusteringFMeasure {
 
     }
 
-    public void readTopicClustersACL(String goldDir) {
-        LinkedList<Document> topics = new LinkedList<Document>();
+
+    // 2014/9/25
+    // We don't really need hashmap keys, but had to make a fake key to fit in KMeansClustering constructor's parameters
+    public static HashMap<String, Integer>  readTopicClustersACL(String goldDir) {
+        HashMap<Integer, Document> topics = new HashMap<Integer, Document>();
 //        HashMap<String, HashSet<String>> goldstandard = readGoldstandardACLDataset("/Users/mhjang/Desktop/clearnlp/dataset/acl/goldstandard.txt");
+        HashMap<String, Integer> topicClusterMap = new HashMap<String, Integer>();
         try {
             BufferedReader br = new BufferedReader(new FileReader(goldDir));
             String line;
-            HashMap<String, Integer> topicClusterMap = new HashMap<String, Integer>();
             LinkedList<String> tokenSet = new LinkedList<String>();
             int clusterId = 0;
             while ((line = br.readLine()) != null) {
@@ -133,19 +140,19 @@ public class ClusteringFMeasure {
                             tokenSet.add(tokens[i].toLowerCase());
                     }
                     topicClusterMap.put(line, clusterId);
-              //      System.out.println(line + ": " + clusterId);
-               //     HashSet<String> docs = goldstandard.get(line);
-               //     for(String doc : docs) {
-               ////         System.out.print(doc + ", ");
-               //     }
-               //     System.out.println();
+                    //      System.out.println(line + ": " + clusterId);
+                    //     HashSet<String> docs = goldstandard.get(line);
+                    //     for(String doc : docs) {
+                    ////         System.out.print(doc + ", ");
+                    //     }
+                    //     System.out.println();
 
                 } else {
                     if (tokenSet.size() > 0) {
                         Document document = new Document(tokenSet);
-             //           document.printTerms();
+                        //           document.printTerms();
                         tokenSet = new LinkedList<String>();
-                        topics.add(document);
+                        topics.put(clusterId, document);
                         clusterId++;
                     } else {
                         continue;
@@ -156,7 +163,7 @@ public class ClusteringFMeasure {
         } catch (Exception e) {
             e.printStackTrace();
         }
-        return topics;
+        return topicClusterMap;
     }
 
     // read goldstandard for slide data

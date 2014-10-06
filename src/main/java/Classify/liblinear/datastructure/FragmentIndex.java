@@ -1,4 +1,4 @@
-package Classify.liblinear;
+package Classify.liblinear.datastructure;
 
 /**
  * Created by mhjang on 7/21/14.

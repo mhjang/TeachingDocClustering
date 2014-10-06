@@ -36,7 +36,7 @@ public class MaxEntFeatureExtractor {
     // 7/31/14: change this implementation to use FeatureExtractor to extract features
     // composition design
 
-    FeatureExtractor fe = new FeatureExtractor();
+ //   FeatureExtractor fe = new FeatureExtractor();
     static String initiatedTag = null;
     static String[] tags = {TagConstant.codeTag, TagConstant.tableTag, TagConstant.equTag, TagConstant.miscTag};
 

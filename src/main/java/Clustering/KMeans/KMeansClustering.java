@@ -3,6 +3,8 @@ package Clustering.KMeans;
 import Clustering.*;
 import Similarity.CosineSimilarity;
 
+import java.io.BufferedReader;
+import java.io.FileReader;
 import java.io.IOException;
 import java.text.DecimalFormat;
 import java.util.*;
@@ -28,7 +30,7 @@ public class KMeansClustering extends Clustering{
         super(dc);
         this.dc = dc;
         LinkedList<Document> initFeatures = new LinkedList<Document>();
-        for(String topic : topiclist) {
+        for(String topic : centroidFeatures.keySet()) {
             initFeatures.add(centroidFeatures.get(topic));
         }
         centroids = initCentroid(initFeatures);
@@ -63,6 +65,50 @@ public class KMeansClustering extends Clustering{
         return centroids;
     }
 
+    /**
+     * 2014/9/28
+     * Initialize Centroid for ACL data
+     */
+    public CentroidDocument[] initCentroidACL() throws IOException {
+       HashMap<Integer, Document> topics = new HashMap<Integer, Document>();
+       try {
+                BufferedReader br = new BufferedReader(new FileReader("/Users/mhjang/Desktop/clearnlp/dataset/acl/clustertopics.txt"));
+                String line;
+                LinkedList<String> tokenSet = new LinkedList<String>();
+                int clusterId = 0;
+                while ((line = br.readLine()) != null) {
+                    if (line.trim().length() > 0) {
+                        String[] tokens = line.split("\\/| |\\,");
+                        for (int i = 0; i < tokens.length; i++) {
+                            if (!tokenSet.contains(tokens[i]))
+                                tokenSet.add(tokens[i].toLowerCase());
+                        }
+                    } else {
+                        if (tokenSet.size() > 0) {
+                            Document document = new Document(tokenSet);
+                            //           document.printTerms();
+                            tokenSet = new LinkedList<String>();
+                            topics.put(clusterId, document);
+                            clusterId++;
+                        } else {
+                            continue;
+
+                        }
+                    }
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+
+        CentroidDocument[] centroids = new CentroidDocument[topics.size()];
+        int i = 0;
+        for(Integer id : topics.keySet()) {
+            Document d = topics.get(id);
+            CentroidDocument cd = new CentroidDocument(d);
+            centroids[i++] = cd;
+        }
+        return centroids;
+    }
     /**
      * print the current centroid features
      * @param centroids
@@ -100,7 +146,7 @@ public class KMeansClustering extends Clustering{
      * @throws IOException
      */
     public LinkedList<LinkedList<Document>> clusterRunWithSignatureVector(int maxIteration, double rssThreshold, LinkedList<String> signature) throws IOException {
-        CentroidDocument[] centroids = initCentroid();
+        CentroidDocument[] centroids = initCentroidACL();
         double curRSS = 0.0, prevRSS = 0.0;
         int[] aa = new int[5];
         LinkedList<LinkedList<Document>> clusterAssignments = null;
@@ -164,7 +210,7 @@ public class KMeansClustering extends Clustering{
     }
 
     public  LinkedList<LinkedList<Document>> clusterRun(int maxIteration, double rssThreshold) throws IOException {
-        CentroidDocument[] centroids = initCentroid();
+  //      CentroidDocument[] centroids = initCentroidACL();
         double curRSS = 0.0, prevRSS = 0.0;
         int[] aa = new int[5];
         LinkedList<LinkedList<Document>> clusterAssignments = null;
@@ -211,8 +257,8 @@ public class KMeansClustering extends Clustering{
                 break;
             }
 
-  /*          for(int i=0; i< centroids.length; i++) {
-                System.out.print(topiclist.get(i) + ": \t");
+           for(int i=0; i< centroids.length; i++) {
+                System.out.print(i + "th cluster");
                 LinkedList<Document> cluster = clusterAssignments.get(i);
                 for (Document d : cluster) {
                     System.out.print(d.getName() + "\t");
@@ -220,10 +266,10 @@ public class KMeansClustering extends Clustering{
                 System.out.println();
             }
 
-   */
+
 
         }
-        printCentroids(centroids);
+   //     printCentroids(centroids);
 
         return clusterAssignments;
     }
