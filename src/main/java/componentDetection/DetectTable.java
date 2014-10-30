@@ -1,5 +1,6 @@
 package componentDetection;
 
+import TeachingDocParser.Tokenizer;
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.HashMultiset;
 import com.google.common.collect.Multiset;
@@ -23,12 +24,13 @@ import java.util.regex.Pattern;
  * 3. The pattern of the two consecutive lines might be the same.
  */
 public class DetectTable {
-    static Pattern numberContainPattern = Pattern.compile("^[a-zA-Z]*([0-9]+).*");
-    static Pattern numberPattern = Pattern.compile("/\\d*\\.?\\d*$/\n");
-    static ArrayList<String> lines = new ArrayList<String>();
-    static Multiset<String> tablePatternUnigram;
-    static Multiset<String> tablePatternBigram;
-    public static void readStats() {
+    Pattern numberContainPattern = Pattern.compile("^[a-zA-Z]*([0-9]+).*");
+    Pattern numberPattern = Pattern.compile("/\\d*\\.?\\d*$/\n");
+    ArrayList<String> lines = new ArrayList<String>();
+    Multiset<String> tablePatternUnigram;
+    Multiset<String> tablePatternBigram;
+
+    public DetectTable() {
         try {
             String baseDir = "/Users/mhjang/Desktop/clearnlp/acl/training/";
             tablePatternUnigram = HashMultiset.create();
@@ -53,8 +55,9 @@ public class DetectTable {
             e.printStackTrace();
         }
     }
+
     // rule #3
-    public static boolean containsSamePattern(String prevLine, String curLine) {
+    public  boolean containsSamePattern(String prevLine, String curLine) {
         // Do the two lines both contain the same number of number tokens?
         Matcher m1 = numberPattern.matcher(prevLine);
         int prevLineCount = 0, curLineCount = 0;
@@ -75,13 +78,13 @@ public class DetectTable {
     }
 */
     // rule #1
-    public static boolean containsSameTokenNum(String prevLine, String curLine) {
+    public  boolean containsSameTokenNum(String prevLine, String curLine) {
         if(prevLine.split(" ").length == curLine.split(" ").length) return true;
         else return false;
     }
 
 
-    public static boolean isTable(String line) {
+    public  boolean isTable(String line) {
         line = line.replaceAll(",|;", "");
 
 /*
@@ -114,11 +117,11 @@ public class DetectTable {
         System.out.println(encodeString(l7));
 
     */
-        restoreParenthesis("( 3 ) + ( 4 ) ");
+        //restoreParenthesis("( 3 ) + ( 4 ) ");
     }
 
 
-    public static double tableLMProbability(String encodedLine) {
+    public  double tableLMProbability(String encodedLine) {
         char[] encodedArray = encodedLine.toCharArray();
         int unigramTotal = 0, bigramTotal = 0;
         for(String c : tablePatternUnigram.elementSet()) {
@@ -139,8 +142,8 @@ public class DetectTable {
         return probability;
     }
     // encode the line by type
-    public static String encodeString(String line) {
-        ArrayList<String> tokens = parenthesisTokenizer(line);
+    public  String encodeString(String line) {
+        ArrayList<String> tokens = Tokenizer.parenthesisTokenizer(line);
         StringBuilder sb = new StringBuilder();
         for(String word: tokens) {
             word = removeSpecialCharacters(word);
@@ -155,7 +158,7 @@ public class DetectTable {
 
     }
 
-    public static int getNumberTokenCount(String encodedLine) {
+    public  int getNumberTokenCount(String encodedLine) {
         int count = 0;
         for(int i=0; i<encodedLine.length(); i++) {
             if(encodedLine.charAt(i) == 'N') count++;
@@ -164,12 +167,12 @@ public class DetectTable {
     }
     // collect encoded table lines
     // one time statistics building process
-    public static void addAnnotationLine(String line) {
+    public  void addAnnotationLine(String line) {
         lines.add(line);
     }
 
     // one time statistics building: I saved the result at /stats/table.ngram
-    public static void buildStatistics() {
+    public  void buildStatistics() {
         Multiset<Character> tablePatternUnigram = HashMultiset.create();
         Multiset<String> tablePatternBigram = HashMultiset.create();
 
@@ -193,7 +196,7 @@ public class DetectTable {
         }
     }
 
-    public static double getRatioRightMatching(String line, String prevLine) {
+    public  double getRatioRightMatching(String line, String prevLine) {
         int n = line.length();
         int m = prevLine.length();
         int size = min(n, m);
@@ -209,7 +212,7 @@ public class DetectTable {
         else return ratio;
     }
 
-    public static double getRatioLeftMatching(String line, String prevLine) {
+    public  double getRatioLeftMatching(String line, String prevLine) {
         int n = line.length();
         int m = prevLine.length();
         int size = min(n, m);
@@ -225,52 +228,8 @@ public class DetectTable {
         else return ratio;
     }
 
-    /**
-     * Cases like (71. 5) (83.3) ==> tokenize 71.5, 83.3.
-     * We can't use Tokenizer("()") because there can be a space inside the parenthesis
-     * @param s
-     */
-    public static ArrayList<String> parenthesisTokenizer(String s) {
-        char[] array = s.toCharArray();
-        ArrayList<String> tokens = new ArrayList<String>();
-        StringBuilder sb = new StringBuilder();
-        int i = 0;
-        while(i < array.length) {
-            if (array[i] == '(') {
-                boolean parenthesisClosed = false;
-                i++;
-                while (!parenthesisClosed && i<array.length) {
-                    if (array[i] == ')') {
-                        parenthesisClosed = true;
-                        tokens.add(sb.toString());
-                        sb.delete(0, sb.length());
-                    } else {
-                        sb.append(array[i]);
-                    }
-                    i++;
-                }
-            } else {
-                boolean tokenEnd = false;
-                while (!tokenEnd && i<array.length) {
-                    // if this is the last character
-                    if(array[i] != ' ') {
-                        sb.append(array[i]);
-                    }
-                    if (array[i] == ' ' || i==array.length -1) {
-                        tokenEnd = true;
-                        if(sb.toString().length() > 0) {
-                            tokens.add(sb.toString());
-                            sb.delete(0, sb.length());
-                        }
-                    }
-                    i++;
-                }
-            }
-        }
-        return tokens;
-    }
 
-    public static String removeSpecialCharacters(String s) {
+    public  String removeSpecialCharacters(String s) {
         char[] sarray = s.toCharArray();
         char[] specialCharacters = {'(',')','!','@','#','$','%','^','&','*','{','}','\'',':','\"','+','-', '.', ','};
         StringBuilder sb = new StringBuilder();
@@ -284,10 +243,10 @@ public class DetectTable {
             }
             if(!flag) sb.append(sarray[i]);
         }
-   //     System.out.println(sb.toString());
+        //     System.out.println(sb.toString());
         return sb.toString();
     }
-    public static int getEditDistance(String s1, String s2)
+    public  int getEditDistance(String s1, String s2)
     {
 
         int m = s1.length();
@@ -303,7 +262,7 @@ public class DetectTable {
         for (int i = 1; i <= m; i++) {
             for (int j = 1; j <= n; j++) {
                 if (s1.charAt(i-1) == s2.charAt(j-1)) v[i][j] = v[i-1][j-1];
-       //         else v[i][j] = 5 + min(min(v[i][j-1],v[i-1][j]),v[i-1][j-1]);
+                    //         else v[i][j] = 5 + min(min(v[i][j-1],v[i-1][j]),v[i-1][j-1]);
                 else {
                     v[i][j] = min(min(v[i-1][j]+1, v[i][j-1]+1), v[i-1][j-1] + 1);
                 }
@@ -318,7 +277,10 @@ public class DetectTable {
         else return b;
     }
 
-    public static String restoreParenthesis(String line) {
+    // 2014/10/5
+    // Because clearNLP's tokenizer butchered up all parentehsis, I had this method to put them back.
+    // Later I decided to use original text files.
+    public  String restoreParenthesis(String line) {
         line = line.replaceAll("\\(\\s", "(");
         line = line.replaceAll("\\s\\)", ")");
 

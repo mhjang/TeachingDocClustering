@@ -276,7 +276,7 @@ public class ClusteringFMeasure {
             fMeasure = (2 * precision * recall) / (precision + recall);
             System.out.println(clusterName + "\t" + precision + "\t" + recall + "\t" + fMeasure);
         }
-        double length = (double)topiclist.size()-1;
+        double length = (double)topiclist.size();
         avgPrecision /= length;
         avgRecall /= length;
         System.out.println(avgPrecision+ "\t"+ avgRecall + "\t" + (2*avgPrecision*avgRecall)/(avgPrecision + avgRecall));

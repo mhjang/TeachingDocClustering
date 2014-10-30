@@ -2,6 +2,7 @@ package Classify.liblinear;
 
 import Classify.TagConstant;
 import Classify.liblinear.datastructure.FeatureParameter;
+import Classify.noisegenerator.TableGenerator;
 import com.google.common.collect.HashMultiset;
 import com.google.common.collect.Multiset;
 import componentDetection.DetectTable;
@@ -14,6 +15,8 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.util.*;
 
+import static de.bwaldvogel.liblinear.SolverType.*;
+
 /**
  * Created by mhjang on 7/16/14.
  * It is a wrapper class that uses liblinear API for SVM Classification.
@@ -21,15 +24,22 @@ import java.util.*;
 public class SVMClassifier {
 
     // default
-    int featureUnit = FeatureExtractor.LINE_BASED;
+    String firstModel;
+    String secondModel;
+
+    Parameter param;
+    public SVMClassifier() {
 
 
+        SolverType solver = L2R_L2LOSS_SVC; // -s 0
+        double C = 1.0;    // cost of constraints violation
+        double eps = 0.01; // stopping criteria
 
-    SolverType solver = SolverType.L2R_L2LOSS_SVC; // -s 0
-    double C = 1.0;    // cost of constraints violation
-    double eps = 0.01; // stopping criteria
+        param = new Parameter(SolverType.L2R_L2LOSS_SVC, C, eps);
 
-    Parameter param = new Parameter(SolverType.L2R_L2LOSS_SVC, C, eps);
+    }
+
+
 
 
     public static void main(String[] args) {
@@ -40,27 +50,47 @@ public class SVMClassifier {
 
         int featureUnit = FeatureExtractor.LINE_BASED;
         //     String baseDir = "/Users/mhjang/Desktop/clearnlp/allslides/";
-        //String baseDir = "/Users/mhjang/Desktop/clearnlp/allslides/annotation_processed/br/";
+   //     String baseDir = "/Users/mhjang/Desktop/clearnlp/allslides/annotation_processed/br/";
         //String applyDir = null;
-               String baseDir = "/Users/mhjang/Desktop/clearnlp/acl/training/";
+          String baseDir = "/Users/mhjang/Desktop/clearnlp/acl/training/";
+     //   String baseDir = "/Users/mhjang/Desktop/test/";
         //     String baseDir = "/Users/mhjang/Documents/teaching_documents/extracted/stemmed/parsed/gold/feature_tokens/";
         // routine 1: do five fold cross validation with annotation to evaluate the accuracy
-        svm.runFiveFoldCrossValidation(baseDir, useAnnotationForPreviousNode, writeModel, featureUnit);
+    //    svm.runFiveFoldCrossValidation(baseDir, useAnnotationForPreviousNode, writeModel, featureUnit);
 
         // routine 2: use all data for learning a model and use the model for five fold cross validation by predicting "previous_label" field
-     //   String firstModel = "slide_model_0723";
-     //   String secondModel = "final_slide_model";
-     //   String firstModel = "acl_initial_model";
-     //   String secondModel = "acl_final_model";
-     //   svm.learnFirstModel(baseDir, firstModel);
-     //   svm.learnSecondModel(baseDir, firstModel, secondModel);
-   //     svm.runFiveFoldCrossValidation(baseDir, useModel, false);
-    /*    String applyDir = "/Users/mhjang/Desktop/clustering/extracted/br/";
+   //     svm.firstModel = "slide_model_0723";
+   //     svm.secondModel = "final_slide_model";
+     //   svm.firstModel = "acl_slide_initial_model_2";
+     //   svm.secondModel = "acl_slide_final_model_2";
+        svm.firstModel = "acl_initial_model";
+        svm.secondModel = "acl_final_model";
+   //    svm.learnFirstModel(baseDir);
+   //    svm.learnSecondModel(baseDir);
 
+    //   svm.runFiveFoldCrossValidation(baseDir, useModel, true, FeatureExtractor.LINE_BASED);
+   //     String applyDir = "/Users/mhjang/Desktop/clustering/extracted/br/";
+    //    String applyDir = "/Users/mhjang/Desktop/test/";
+
+
+   /*    TableGenerator t = svm.getTableGenerator();
+        for(int i=0; i<10; i++) {
+            System.out.println("Table # " + (i+1));
+            t.generateTable();
+        }
+*/
+ //       String applyDir = "/Users/mhjang/Documents/teaching_documents/extracted/dataset/applydataset/";
         // routine 3: apply the learned model to generate the noise-free version of documents
-        svm.applyModelToDocuments(applyDir, firstModel, secondModel);
-    */
+  //      String applyDir = "/Users/mhjang/Desktop/clustering/extracted/br/";
+         String applyDir = "/Users/mhjang/Desktop/clustering/extracted/br/annotation/test/";
+  //      String applyDir = "/Users/mhjang/Desktop/clearnlp/acl/training/";
+        svm.applyModelToDocuments(applyDir);
 
+
+    }
+
+    public TableGenerator getTableGenerator() {
+        return ef.getTableGenerator();
     }
 
     /***
@@ -79,7 +109,6 @@ public class SVMClassifier {
     private Problem generateProblem(String baseDir, boolean useAnnotationForPreviousNode, Model model, boolean writeFile) {
         try {
             String allAnnotationDir = baseDir + "annotation/";
-            DetectTable.readStats();
             DirectoryReader dr = new DirectoryReader(allAnnotationDir);
             // generate features from all annotation files because it's for five fold cross validation
             LinkedList<Feature[]> allFeatures;
@@ -159,14 +188,15 @@ public class SVMClassifier {
             }
             // to save the first model
             else {
+                setModel(firstModel);
                 problem = generateProblem(baseDir, useAnnotationForPreviousNode, model, writeModel);
             }
             FeatureParameter.predictPreviousNode = false;
-            SolverType solver = SolverType.L2R_L2LOSS_SVC; // -s 0
+            SolverType solver = L2R_L2LOSS_SVC; // -s 0
             double C = 1.0;    // cost of constraints violation
             double eps = 0.01; // stopping criteria
 
-            Parameter param = new Parameter(SolverType.L2R_L2LOSS_SVC, 10, 0.01);
+            Parameter param = new Parameter(L2R_L2LOSS_SVC, 10, 0.01);
             int nr_fold = 5;
             double[] target = new double[problem.l];
             // the predicted results are saved at "target" array
@@ -194,7 +224,7 @@ public class SVMClassifier {
      * @param baseDir, modelFileName
      * @throws IOException
      */
-    public void learnFirstModel(String baseDir, String modelOutput) {
+    public void learnFirstModel(String baseDir) {
 //        Problem problem = generateProblem("/Users/mhjang/Desktop/clearnlp/allslides/");
         try {
             boolean useAnnotationForPreviousNode = true;
@@ -203,9 +233,9 @@ public class SVMClassifier {
             FeatureParameter.predictPreviousNode = false;
 
             Model model = Linear.train(problem, param);
-            File modelFile = new File(modelOutput);
+            File modelFile = new File(firstModel);
             model.save(modelFile);
-            setModel(modelOutput);
+            setModel(firstModel);
             // setting the first model
             FeatureParameter.setFirstModel(model);
         } catch (Exception e) {
@@ -215,20 +245,19 @@ public class SVMClassifier {
     }
 
 
-    public void learnSecondModel(String baseDir, String firstModelName, String secondModelName) {
+    public void learnSecondModel(String baseDir) {
 //        Problem problem = generateProblem("/Users/mhjang/Desktop/clearnlp/allslides/");
         try {
-            File file = new File(firstModelName);
             boolean useAnnotationForPreviousNode = false;
             boolean writeModel = false;
             Problem problem = generateProblem(baseDir, useAnnotationForPreviousNode, model, writeModel);
             FeatureParameter.predictPreviousNode = true;
 
-            Model secondModel = Linear.train(problem, param);
-            File newModelName = new File(secondModelName);
-            secondModel.save(newModelName);
+            Model model = Linear.train(problem, param);
+            File modelFile = new File(secondModel);
+            model.save(modelFile);
            // setModel(secondModelName);
-            FeatureParameter.setSecondModel(secondModel);
+            FeatureParameter.setSecondModel(model);
             System.out.println("Learned a second model using first model with previous sequence prediction feature!");
         } catch (Exception e) {
             e.printStackTrace();
@@ -237,20 +266,20 @@ public class SVMClassifier {
     }
 
 
-    public void applyModelToDocuments(String dir, String firstModelName, String secondModelName) {
+    public void applyModelToDocuments(String dir) {
         try {
                 Problem problem;
                 boolean useAnnotationForPreviousNode = false;
                 boolean writeModel = false;
                 // read the models
-                File file1 = new File(firstModelName);
+                File file1 = new File(firstModel);
                 Model firstModel = Linear.loadModel(file1);
-                File file2 = new File(secondModelName);
+                File file2 = new File(secondModel);
                 Model secondModel = Linear.loadModel(file2);
                 FeatureParameter.setModelSet(firstModel, secondModel);
                 boolean isTrainingMode = false;
 
-                DirectoryReader dr = new DirectoryReader(dir);
+                DirectoryReader dr = new DirectoryReader(dir + "/annotation");
                 // generate features from all annotation files because it's for five fold cross validation
                 LinkedList<Feature[]> allFeatures;
                 // line or token-based?

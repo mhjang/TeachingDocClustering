@@ -115,6 +115,7 @@ public class MaxEntFeatureExtractor {
 
     FeatureComparator fc = new FeatureComparator();
 
+    DetectTable tableDetecter = new DetectTable();
     int[] componentCount;
     int[] answers = new int[1000000];
 
@@ -409,7 +410,7 @@ public class MaxEntFeatureExtractor {
                         if (treeIdxSkip) continue;
                         //      System.out.println(treeIdx + ":" + line);
                         //      printTree(treeIdx, treelist.get(treeIdx));
-                        extractFeatureFromTree(componentBegin, componentEnd, treelist.get(treeIdx), initiatedTag, beginToken, endToken, DetectCodeComponent.isCodeLine(line), DetectEquation.isEquation(line), DetectTable.isTable(line));
+                        extractFeatureFromTree(componentBegin, componentEnd, treelist.get(treeIdx), initiatedTag, beginToken, endToken, DetectCodeComponent.isCodeLine(line), DetectEquation.isEquation(line), tableDetecter.isTable(line));
                         numOfTokensInDoc += treelist.get(treeIdx).size() - 1;
                         if (tagClosed) {
                             initiatedTag = null;

@@ -5,6 +5,7 @@ import Classify.TagConstant;
 import Classify.liblinear.datastructure.NonTextualComponent;
 import Classify.liblinear.datastructure.FeatureParameter;
 import Classify.liblinear.datastructure.FragmentIndex;
+import Classify.noisegenerator.TableGenerator;
 import com.clearnlp.dependency.DEPArc;
 import com.clearnlp.dependency.DEPNode;
 import com.clearnlp.dependency.DEPTree;
@@ -46,11 +47,17 @@ public class TokenFeatureExtractor extends BasicFeatureExtractor {
     static FeatureNode feature2True = new FeatureNode(2, 1);
     static FeatureNode feature2False = new FeatureNode(2, 0);
 
+    DetectTable tableDetecter;
 
     public TokenFeatureExtractor(boolean isTrainingMode) {
         this.isLearningMode = isTrainingMode;
+        tableDetecter = new DetectTable();
     }
 
+    public TableGenerator getTableGenerator() {
+        /// yet to be implemented
+        return null;
+    }
 
     /**
      * Extract features for applying the model
@@ -116,7 +123,7 @@ public class TokenFeatureExtractor extends BasicFeatureExtractor {
                     if (!line.isEmpty()) {
                         LinkedList<String> tokens = new LinkedList<String>();
                         int startIdx = 0;
-                        FeatureParameter param = new FeatureParameter.Builder(treelist.get(treeIdx), DetectCodeComponent.codeLineEvidence(line), DetectCodeComponent.keywordContainSize(line),DetectEquation.isEquation(line), DetectTable.isTable(line), true).build();
+                        FeatureParameter param = new FeatureParameter.Builder(treelist.get(treeIdx), DetectCodeComponent.codeLineEvidence(line), DetectCodeComponent.keywordContainSize(line),DetectEquation.isEquation(line), tableDetecter.isTable(line), true).build();
                         noiseRemovedline = generateApplyFeatures(param);
                         treeIdx++;
                         fwriter.writeLine(noiseRemovedline);
@@ -223,7 +230,7 @@ public class TokenFeatureExtractor extends BasicFeatureExtractor {
                         int startIdx = 0;
                         // If currently no tag was opened
                         if (initiatedTag == null) {
-                            for (String tag : tags) {
+                            for (String tag : startTags) {
                                 if (line.contains(tag)) {
                                     initiatedTag = tag;
                                     endTag = TagConstant.findMatchingEndTag(initiatedTag);
@@ -268,7 +275,7 @@ public class TokenFeatureExtractor extends BasicFeatureExtractor {
                         if (treeIdxSkip) continue;
                         int keywordContain = DetectCodeComponent.keywordContainSize(line);
                         FeatureParameter param;
-                        param = new FeatureParameter.Builder(treelist.get(treeIdx), DetectCodeComponent.codeLineEvidence(line), keywordContain, DetectEquation.isEquation(line), DetectTable.isTable(line), applyModel).componentFrag(new FragmentIndex(componentBegin, componentEnd)).tagType(initiatedTag).tokenLocation(new FragmentIndex(beginToken, endToken)).build();
+                        param = new FeatureParameter.Builder(treelist.get(treeIdx), DetectCodeComponent.codeLineEvidence(line), keywordContain, DetectEquation.isEquation(line), tableDetecter.isTable(line), applyModel).componentFrag(new FragmentIndex(componentBegin, componentEnd)).tagType(initiatedTag).tokenLocation(new FragmentIndex(beginToken, endToken)).build();
 
                         addFeature(param);
                         numOfTokensInDoc += treelist.get(treeIdx).size() - 1;
@@ -331,11 +338,6 @@ public class TokenFeatureExtractor extends BasicFeatureExtractor {
             allFeatures.add(featureArray);
     }
 }
-
-    @Override
-    protected String predictAndRemoveComponent(FeatureParameter param) {
-        return null;
-    }
 
 
     /**

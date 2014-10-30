@@ -152,7 +152,7 @@ public class KMeansClustering extends Clustering{
         LinkedList<LinkedList<Document>> clusterAssignments = null;
         Collection<Document> collection =  dc.getDocumentSet().values();
         for (int k = 0; k < maxIteration; k++) {
-            System.out.println("************* Iteration " + k + " *************");
+      //      System.out.println("************* Iteration " + k + " *************");
             clusterAssignments = new LinkedList<LinkedList<Document>>();
             //initialize the cluster assignments
             for (int i = 0; i < centroids.length; i++) {
@@ -186,7 +186,7 @@ public class KMeansClustering extends Clustering{
             for (int i = 0; i < centroids.length; i++) {
                 curRSS += computeRSS(clusterAssignments.get(i));
             }
-            System.out.println("RSS : " + curRSS);
+     //       System.out.println("RSS : " + curRSS);
             if (Math.abs(curRSS / prevRSS) < rssThreshold) {
                 System.out.println("current threshold: " + Math.abs(curRSS / prevRSS));
                 break;
@@ -216,7 +216,7 @@ public class KMeansClustering extends Clustering{
         LinkedList<LinkedList<Document>> clusterAssignments = null;
         Collection<Document> collection =  dc.getDocumentSet().values();
         for (int k = 0; k < maxIteration; k++) {
-            System.out.println("************* Iteration " + k + " *************");
+     //       System.out.println("************* Iteration " + k + " *************");
             clusterAssignments = new LinkedList<LinkedList<Document>>();
             //initialize the cluster assignments
             for (int i = 0; i < centroids.length; i++) {
@@ -251,13 +251,13 @@ public class KMeansClustering extends Clustering{
             for (int i = 0; i < centroids.length; i++) {
                 curRSS += computeRSS(clusterAssignments.get(i));
             }
-            System.out.println("RSS : " + curRSS);
+     //       System.out.println("RSS : " + curRSS);
             if (Math.abs(curRSS / prevRSS) < rssThreshold) {
                 System.out.println("current threshold: " + Math.abs(curRSS / prevRSS));
                 break;
             }
 
-           for(int i=0; i< centroids.length; i++) {
+  /*         for(int i=0; i< centroids.length; i++) {
                 System.out.print(i + "th cluster");
                 LinkedList<Document> cluster = clusterAssignments.get(i);
                 for (Document d : cluster) {
@@ -265,7 +265,7 @@ public class KMeansClustering extends Clustering{
                 }
                 System.out.println();
             }
-
+*/
 
 
         }

@@ -1,6 +1,7 @@
 package Classify.liblinear;
 
 import Classify.liblinear.datastructure.FeatureParameter;
+import Classify.noisegenerator.TableGenerator;
 import de.bwaldvogel.liblinear.*;
 
 import java.util.*;
@@ -14,8 +15,8 @@ public class FeatureExtractor {
 
     int[] componentCount;
 
-    static int LINE_BASED = 0;
-    static int TOKEN_BASED = 1;
+    public static int LINE_BASED = 0;
+    public static int TOKEN_BASED = 1;
 
     BasicFeatureExtractor extractor;
     String baseDir;
@@ -27,6 +28,9 @@ public class FeatureExtractor {
         this.isLearningMode = isLearningMode;
     }
 
+    public TableGenerator getTableGenerator() {
+        return extractor.getTableGenerator();
+    }
 
     public LinkedList<Feature[]>  extractFeatures(int unit) {
         if(unit == FeatureExtractor.LINE_BASED) {

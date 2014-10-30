@@ -31,13 +31,13 @@ public class TagConstant {
     public static int INTCODE = 2;
     public static int ENDCODE = 2;
 
-    public static int BEGINEQU = 3;
-    public static int INTEQU = 3;
-    public static int ENDEQU = 3;
+    public static int BEGINEQU = 2;
+    public static int INTEQU = 2;
+    public static int ENDEQU = 2;
 
-    public static int BEGINMISC = 4;
-    public static int INTMISC = 4;
-    public static int ENDMISC = 4;
+    public static int BEGINMISC = 3;
+    public static int INTMISC = 3;
+    public static int ENDMISC = 3;
     public static int TEXT = 0;
 
     public static String tableTag = "<TABLE>";

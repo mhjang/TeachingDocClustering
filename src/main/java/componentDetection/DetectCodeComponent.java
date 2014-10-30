@@ -1,5 +1,6 @@
 package componentDetection;
 
+import TeachingDocParser.Tokenizer;
 import com.google.common.collect.HashMultiset;
 import com.google.common.collect.Multiset;
 
@@ -111,8 +112,8 @@ public class DetectCodeComponent {
 
     public static Multiset<String> getCodeEvidence(String line) {
         Multiset<String> codeDetect = HashMultiset.create();
-        String rline = DetectTable.restoreParenthesis(line);
-        ArrayList<String> tokens = DetectTable.parenthesisTokenizer(rline);
+    //    String rline = Tokenizer.restoreParenthesis(line);
+        ArrayList<String> tokens = Tokenizer.parenthesisTokenizer(line);
         for(String term: tokens) {
             codeDetect.add("IS_BRACKET", DetectCodeComponent.isBracket(term) ? 1 : 0);
             /**

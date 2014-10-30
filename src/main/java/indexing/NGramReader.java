@@ -29,7 +29,7 @@ public class NGramReader {
     BigInteger trigramTotalCount = BigInteger.valueOf(1024908267);
 
     public NGramReader() throws IOException {
-        System.out.println("Google N-gram reader initiated :) ");
+        System.out.println("Google N-gram reader ");
         unigramReader = new DiskMapReader(unigramFile.getAbsolutePath());
         bigramReader = new DiskMapReader(bigramFile.getAbsolutePath());
         trigramReader = new DiskMapReader(trigramFile.getAbsolutePath());
@@ -67,6 +67,7 @@ public class NGramReader {
         byte[] data;
         if(tokens.length == 1) {
             data = unigramReader.get(Utility.fromString(term));
+
         }
         else if(tokens.length == 2)
             data = bigramReader.get(Utility.fromString(term));

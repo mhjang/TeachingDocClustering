@@ -1,11 +1,10 @@
 package TeachingDocParser;
 
+import Classify.noisegenerator.TableGenerator;
 import Clustering.Document;
 import db.DBConnector;
 
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileReader;
+import java.io.*;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
@@ -25,10 +24,17 @@ public class Tokenizer {
     boolean useGoogleTrigram = false;
     DBConnector db;
 
+    TableGenerator tableGenerator;
     public Tokenizer() {
 
     }
 
+    /**
+     * set the table generator from reading annotation data
+     */
+    public void setTableGenerator(TableGenerator tg) {
+        this.tableGenerator = tg;
+    }
 
     /**
      * takes String and convert it to a document with unigram/bigram/trigrams and term frequency information
@@ -114,6 +120,53 @@ public class Tokenizer {
      }
 
 
+
+    /**
+     * Cases like (71. 5) (83.3) ==> tokenize 71.5, 83.3.
+     * We can't use Tokenizer("()") because there can be a space inside the parenthesis
+     * @param s
+     */
+    public static ArrayList<String> parenthesisTokenizer(String s) {
+        char[] array = s.toCharArray();
+        ArrayList<String> tokens = new ArrayList<String>();
+        StringBuilder sb = new StringBuilder();
+        int i = 0;
+        while(i < array.length) {
+            if (array[i] == '(') {
+                boolean parenthesisClosed = false;
+                i++;
+                while (!parenthesisClosed && i<array.length) {
+                    if (array[i] == ')') {
+                        parenthesisClosed = true;
+                        tokens.add(sb.toString());
+                        sb.delete(0, sb.length());
+                    } else {
+                        sb.append(array[i]);
+                    }
+                    i++;
+                }
+            } else {
+                boolean tokenEnd = false;
+                while (!tokenEnd && i<array.length) {
+                    // if this is the last character
+                    if(array[i] != ' ') {
+                        sb.append(array[i]);
+                    }
+                    if (array[i] == ' ' || i==array.length -1) {
+                        tokenEnd = true;
+                        if(sb.toString().length() > 0) {
+                            tokens.add(sb.toString());
+                            sb.delete(0, sb.length());
+                        }
+                    }
+                    i++;
+                }
+            }
+        }
+        return tokens;
+    }
+
+
     public HashMap<String, Document> tokenize(String dir, boolean wikiFiltering, int nGramType) {
         HashMap<String, String> documentTextMap = readFiles(dir);
         HashMap<String, Document> documentSet = new HashMap<String, Document>();
@@ -122,8 +175,16 @@ public class Tokenizer {
             documentSet.put(docName, d);
         }
         return documentSet;
+    }
 
-
+    public HashMap<String, Document> tokenizeWithNoise(String dir, boolean wikiFiltering, int nGramType, double ratio) {
+        HashMap<String, String> documentTextMap = readFilesInjectingNoise(dir, ratio);
+        HashMap<String, Document> documentSet = new HashMap<String, Document>();
+        for(String docName : documentTextMap.keySet()) {
+            Document d = tokenize(docName, documentTextMap.get(docName), wikiFiltering, nGramType);
+            documentSet.put(docName, d);
+        }
+        return documentSet;
     }
 
     /**
@@ -156,6 +217,63 @@ public class Tokenizer {
                 e.printStackTrace();
             }
         }
+        return documentTextMap;
+    }
+
+    /**
+     * reads files in the given directory and return a parsed text per each document that's ready to be tokenized
+     * @param dir
+     * @return
+     */
+    private HashMap<String, String> readFilesInjectingNoise(String dir, double ratio) {
+        HashMap<String, String> documentTextMap = new HashMap<String, String>();
+        Stemmer stemmer = new  Stemmer();
+        File folder = new File(dir);
+        int insertedTable = 0;
+
+        for (final File fileEntry : folder.listFiles()) {
+            try {
+                if(fileEntry.getName().toLowerCase().contains(".ds_store")) continue;
+                if(fileEntry.isDirectory()) continue;
+                BufferedReader br = new BufferedReader(new FileReader(fileEntry));
+                BufferedWriter bw = new BufferedWriter(new FileWriter(dir + "/noise30/"+fileEntry.getName()));
+
+                StringBuilder sb = new StringBuilder();
+                String line = br.readLine();
+                int charsCount = 0;
+                int wordsCount = 0;
+                int fileLine = 0;
+                while (line != null) {
+                    sb.append(line);
+                    sb.append('\n');
+                    line = br.readLine();
+                    fileLine++;
+               }
+                int newNoiseSize = (int) (fileLine * ratio);
+                int newNoiseCurrentSize = 0;
+                while(newNoiseCurrentSize <= newNoiseSize) {
+                    LinkedList<String> newlines = tableGenerator.generateTable();
+
+                    //   LinkedList<String> newlines = tableGenerator.generateRandomTable();
+                    for(String noiseLine : newlines) {
+                        sb.append(noiseLine + "\n");
+                    }
+                    insertedTable++;
+                    newNoiseCurrentSize += newlines.size();
+                }
+
+
+                String text = sb.toString();
+                bw.write(text);
+                bw.close();
+
+                documentTextMap.put(fileEntry.getName().toLowerCase(), stemmer.stemString(text));
+            } catch(Exception e) {
+                e.printStackTrace();
+            }
+        }
+        System.out.println("Average # of inserted tables: " + (double)insertedTable / (double)folder.listFiles().length);
+
         return documentTextMap;
     }
 

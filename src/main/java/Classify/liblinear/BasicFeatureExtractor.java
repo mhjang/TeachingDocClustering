@@ -2,10 +2,13 @@ package Classify.liblinear;
 
 import Classify.TagConstant;
 import Classify.liblinear.datastructure.FeatureParameter;
+import Classify.noisegenerator.TableGenerator;
 import com.clearnlp.dependency.DEPNode;
 import com.clearnlp.dependency.DEPTree;
 import de.bwaldvogel.liblinear.Feature;
 import de.bwaldvogel.liblinear.Model;
+import de.bwaldvogel.liblinear.SolverType;
+import org.omg.Dynamic.Parameter;
 
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -19,7 +22,7 @@ import java.util.LinkedList;
 public abstract class BasicFeatureExtractor {
 
     static String initiatedTag = null;
-    static String[] tags = {TagConstant.codeTag, TagConstant.tableTag, TagConstant.equTag, TagConstant.miscTag};
+    static String[] startTags = {TagConstant.codeTag, TagConstant.tableTag, TagConstant.equTag, TagConstant.miscTag};
     static String[] closetags = {TagConstant.codeCloseTag, TagConstant.tableCloseTag, TagConstant.equCloseTag, TagConstant.miscCloseTag};
 
     static HashMap<String, Integer> featureMap = new HashMap<String, Integer>();
@@ -57,6 +60,12 @@ public abstract class BasicFeatureExtractor {
     boolean isLearningMode = true;
 
 
+    SolverType solver = SolverType.L2R_L2LOSS_SVC; // -s 0
+    double C = 1.0;    // cost of constraints violation
+    double eps = 0.01; // stopping criteria
+
+
+
     // for debugging purpose
     ArrayList<String> originalTextLines = new ArrayList<String>();
 
@@ -88,7 +97,7 @@ public abstract class BasicFeatureExtractor {
 
     abstract protected void addFeature(FeatureParameter param);
 
-    abstract protected String predictAndRemoveComponent(FeatureParameter param);
+    abstract public TableGenerator getTableGenerator();
 
     public HashMap<String, Integer> getFeatureDictionary() {
         return featureMap;

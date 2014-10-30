@@ -3,6 +3,7 @@ package Classify.liblinear;
 import Classify.TagConstant;
 import Classify.liblinear.datastructure.NonTextualComponent;
 import Classify.liblinear.datastructure.FeatureParameter;
+import Classify.noisegenerator.TableGenerator;
 import com.clearnlp.dependency.DEPArc;
 import com.clearnlp.dependency.DEPNode;
 import com.clearnlp.dependency.DEPTree;
@@ -19,6 +20,7 @@ import de.bwaldvogel.liblinear.Linear;
 import simple.io.myungha.SimpleFileReader;
 import simple.io.myungha.SimpleFileWriter;
 
+import java.io.IOException;
 import java.util.*;
 
 /**
@@ -42,10 +44,18 @@ public class LineFeatureExtractor extends BasicFeatureExtractor {
     double leftMatchingRatioForTable = 0.0;
     double previousNodePrediction;
 
+    boolean tagClosed = false;
+    DetectTable tableDetecter;
+    TableGenerator tableGenerator;
     public LineFeatureExtractor(boolean isLearningMode) {
         this.isLearningMode = isLearningMode;
+        tableDetecter = new DetectTable();
+        tableGenerator = new TableGenerator();
     }
 
+    public TableGenerator getTableGenerator() {
+        return tableGenerator;
+    }
 
     /**
      * Extract features for building the model
@@ -60,8 +70,24 @@ public class LineFeatureExtractor extends BasicFeatureExtractor {
         String parsedDir = baseDir + "parsed/";
         String annotationDir = baseDir + "annotation/";
         String originalDir = baseDir + "text/";
+        String removed = baseDir + "removed/";
+        String htmlDir = baseDir + "html/";
+//        String tableRemoved = baseDir + "tableRemoved/";
+//        String codeRemoved = baseDir + "codeRemoved/";
+//        String equRemoved = baseDir + "equRemoved/";
+//        String miscRemoved = baseDir + "miscRemoved/";
+
         String output = baseDir + "output/";
+
         SimpleFileWriter writer = null;
+        SimpleFileWriter removedWriter = null;
+        SimpleFileWriter removedTableWriter = null;
+        SimpleFileWriter removedCodeWriter = null;
+        SimpleFileWriter removedEquWriter = null;
+        SimpleFileWriter removedMiscWriter = null;
+        SimpleFileWriter htmlWriter = null;
+
+
 
         if (applyModel) {
             model = loadModel();
@@ -74,12 +100,14 @@ public class LineFeatureExtractor extends BasicFeatureExtractor {
             componentCount[i] = 0;
         }
 
+        Multiset<String> globalComponentCount = HashMultiset.create();
 
         try {
             for (String filename : data) {
                 DEPReader reader = new DEPReader(0, 1, 2, 3, 4, 5, 6);
                 initiatedTag = null;
 
+                Multiset<String> componentCount = HashMultiset.create();
                 if (filename.contains(".DS_Store")) continue;
                 // open a corresponding parsed file
                 reader.open(UTInput.createBufferedFileReader(parsedDir + filename + ".cnlp"));
@@ -98,7 +126,7 @@ public class LineFeatureExtractor extends BasicFeatureExtractor {
 
                 SimpleFileReader treader = new SimpleFileReader(originalDir + filename);
 
-                boolean isTagBeginLine = false, tagClosed = false;
+                boolean isTagBeginLine = false;
                 String endTag = null;
 
                 // current line - 1 previous line
@@ -111,16 +139,10 @@ public class LineFeatureExtractor extends BasicFeatureExtractor {
                 // reading "/annotated" files
                 ArrayList<String> annotatedLines = new ArrayList<String>();
                 String l = "";
-                String[] tags = TagConstant.getTags();
                 String tagRemoved = "";
                 while (freader.hasMoreLines()) {
                     l = freader.readLine();
-                    tagRemoved = l;
-                    for (String t : tags) {
-                        tagRemoved = tagRemoved.replace(t, "");
-                    }
-                    if (tagRemoved.isEmpty() || tagRemoved.trim().length() == 0) continue;
-                    else annotatedLines.add(l);
+                    annotatedLines.add(l.trim());
                 }
                 // reading "/text" files
                 ArrayList<String> originalLines = new ArrayList<String>();
@@ -129,98 +151,191 @@ public class LineFeatureExtractor extends BasicFeatureExtractor {
                     if (l.isEmpty() || l.trim().length() == 0 || l.replace(" ", "").length() == 0) continue;
                     else originalLines.add(l);
                 }
-         //     System.out.println(annotatedLines.size() + " lines vs " + originalLines.size());
+                //     System.out.println(annotatedLines.size() + " lines vs " + originalLines.size());
 
 
-                if(!isLearningMode) {
+                if (!isLearningMode) {
                     writer = new SimpleFileWriter(output + filename);
+                    removedWriter = new SimpleFileWriter(removed + filename);
+              //      removedTableWriter = new SimpleFileWriter(tableRemoved + filename);
+              //      removedCodeWriter = new SimpleFileWriter(codeRemoved + filename);
+              //      removedEquWriter = new SimpleFileWriter(equRemoved + filename);
+              //      removedMiscWriter = new SimpleFileWriter(miscRemoved + filename);
+                    htmlWriter = new SimpleFileWriter(htmlDir + filename + ".html");
+                    htmlWriter.write("<!DOCTYPE html>\n" +
+                           "<link rel=\"stylesheet\" href=\"./css/bootstrap.css\">\n" +
+                            "<center>" +
+                            "<h2> " + filename + "</h2>" +
+                            "<table style=\"width:80%\">");
+                    htmlWriter.writeLine("<Table>");
 
                 }
+                int j = 0;
+
+                LinkedList<String> table = new LinkedList<String>();
                 for (int i = 0; i < annotatedLines.size(); i++) {
                     boolean treeIdxSkip = false;
+                    //     System.out.println(filename + ": " + annotatedLines.get(i) + "vs  "+ originalLines.get(i));
                     line = annotatedLines.get(i);
+                    tagRemoved = line;
 
-                    textLine = originalLines.get(i);
-
-                    if(i == 0) {
-                        prevLine_1 = "";
-                        prevLine_2 = "";
-                    }
-                    else if(i == 1) {
-                        prevLine_1 = originalLines.get(i-1);
-                        prevLine_2 = "";
-                    }
-                    else {
-                        prevLine_1 = originalLines.get(i-1);
-                        prevLine_2 = originalLines.get(i-2);
-                    }
-
-
-                        // If currently no tag was opened
-                    if (initiatedTag == null) {
-                         for (String tag : tags) {
-                            if (line.contains(tag)) {
-                                initiatedTag = tag;
-                                endTag = TagConstant.findMatchingEndTag(initiatedTag);
-                                break;
-                            }
+                    for (String t : startTags) {
+                        if (tagRemoved.contains(t)) {
+                            tagRemoved = tagRemoved.replace(t, "");
+                            initiatedTag = t;
+  //                          endTag = TagConstant.findMatchingEndTag(initiatedTag);
+                            tagClosed = false;
                         }
-                     }
-                     if (initiatedTag!= null && line.contains(endTag)) {
+                    }
+
+                    if (tagRemoved.isEmpty() || tagRemoved.trim().length() == 0) {
+                        continue;
+                    }
+
+                    for (String t : closetags) {
+                        if (tagRemoved.contains(t)) {
+                            tagRemoved = tagRemoved.replace(t, "");
+      //                      endTag = t;
                             tagClosed = true;
                         }
-
-                    if(!onlyContainsTag(line)) {
-                            int keywordContain = DetectCodeComponent.keywordContainSize(line);
-                            FeatureParameter param;
-                            param = new FeatureParameter.Builder(treelist.get(treeIdx), DetectCodeComponent.codeLineEvidence(line),
-                                    keywordContain, DetectEquation.isEquation(line), DetectTable.isTable(textLine),
-                                    applyModel).tagType(initiatedTag).setLines(prevLine_2, prevLine_1, line).build();
-                            if(isLearningMode) addFeature(param);
-                            else {
-                                String tagRemovedLine = predictAndRemoveComponent(param);
-                                writer.writeLine(tagRemovedLine);
-                            }
-                            treeIdx++;
-                      //      prevLine_2 = prevLine_1;
-                      //      prevLine_1 = line;
                     }
+                    if (tagRemoved.isEmpty() || tagRemoved.trim().length() == 0) {
+                        initiatedTag = null;
+                        continue;
+                    }
+
+
+                    textLine = originalLines.get(j++);
+
+             //       if(line.trim().toLowerCase().charAt(0) != textLine.trim().toLowerCase().charAt(0))
+             //           System.out.println(i + ":" + line + " vs " + textLine);
+
+                    if(initiatedTag != null) {
+                        if (initiatedTag.equals(TagConstant.tableTag)) {
+                            table.add(textLine);
+                        }
+                    }
+                    if (i == 0) {
+                        prevLine_1 = "";
+                        prevLine_2 = "";
+                    } else if (i == 1) {
+                        prevLine_1 = originalLines.get(j - 1);
+                        prevLine_2 = "";
+                    } else {
+                        prevLine_1 = originalLines.get(j - 1);
+                        prevLine_2 = originalLines.get(j - 2);
+                    }
+
+
+                    if (!onlyContainsTag(line)) {
+                        int keywordContain = DetectCodeComponent.keywordContainSize(line);
+                        FeatureParameter param;
+                        param = new FeatureParameter.Builder(treelist.get(treeIdx), DetectCodeComponent.codeLineEvidence(line),
+                                keywordContain, DetectEquation.isEquation(line), tableDetecter.isTable(textLine),
+                                applyModel).tagType(initiatedTag).setLines(prevLine_2, prevLine_1, line).build();
+                        if (isLearningMode) addFeature(param);
+                        else {
+                            int component = isThisLineNoise(param);
+                            if (component == TagConstant.TEXT) {
+                                writer.writeLine(line);
+                                htmlWriter.writeLine("<tr><td>" + line + "</td></tr>");
+                                componentCount.add("TEXT");
+
+                            }
+                            else {
+                                removedWriter.writeLine(line);
+                                if (component == TagConstant.BEGINTABLE) {
+                                    htmlWriter.writeLine("<tr><td class=\"table\"> [Table] " + line + "</td></tr>");
+                                    componentCount.add("TABLE");
+                                    System.out.println(line);
+                           //         removedTableWriter.writeLine(line);
+                                } else if (component == TagConstant.BEGINCODE) {
+                                    htmlWriter.writeLine("<tr><td class=\"code\"> [Code] " + line + "</td></tr>");
+                                    componentCount.add("CODE");
+
+                                    //         removedCodeWriter.writeLine(line);
+                                } else if (component == TagConstant.BEGINEQU) {
+                                    htmlWriter.writeLine("<tr><td class=\"equ\"> [Equ] " + line + "</td></tr>");
+                                    componentCount.add("EQU");
+
+                                    //         removedEquWriter.writeLine(line);
+                                } else if (component == TagConstant.BEGINMISC) {
+                           //         removedMiscWriter.writeLine(line);
+                                    htmlWriter.writeLine("<tr><td class=\"misc\"> [Misc] " + line + "</td></tr>");
+                                    componentCount.add("MISC");
+
+                                }
+                            }
+
+                        }
+                        treeIdx++;
+                        //      prevLine_2 = prevLine_1;
+                        //      prevLine_1 = line;
+                    }
+
 
                     if (tagClosed) {
+                        if(initiatedTag != null) {
+                            if (initiatedTag.equals(TagConstant.tableTag)) {
+                                tableGenerator.addTable(table);
+                                table = new LinkedList<String>();
+                            }
+                        }
                         initiatedTag = null;
                         tagClosed = false;
+
                     }
                 }
-                if(!isLearningMode)
+                if (!isLearningMode) {
                     writer.close();
+                    htmlWriter.write("</table>");
+                    int size = componentCount.size();
+                    for(String comp : componentCount.elementSet()) {
+                        htmlWriter.writeLine(comp  + ":"  + (double)componentCount.count(comp)/(double)size + "<br>");
+                    }
+                    globalComponentCount.addAll(componentCount);
+                /*    removedCodeWriter.close();
+                    removedTableWriter.close();
+                    removedEquWriter.close();
+                    removedMiscWriter.close();
+               */
+                }
             }
-         } catch (Exception e) {
+            int size = globalComponentCount.size();
+            for(String comp : globalComponentCount.elementSet()) {
+                System.out.println(comp  + ":"  + (double)globalComponentCount.count(comp)/(double)size);
+                System.out.println(comp  + ":"  + globalComponentCount.count(comp) + "\t" + size);
+
+            }
+    } catch (Exception e) {
             e.printStackTrace();
         }
 
 
         // all the stats for feature analysis
-        System.out.println("average of edit distance count : " + (double)editDistanceSum / (double)editDistanceCount);
-        System.out.println("average of edit distance count for table : " + (double)editDistanceSumForTable / (double)editDistanceCountForTable);
-        System.out.println("average of weighted edit distance count : " + (double)patternProbWeightedED / (double)editDistanceCount);
-        System.out.println("average of weighted edit distance count for table : " + (double)patternProbWeightedEDForTable / (double)editDistanceCountForTable);
-        System.out.println("average of line length : " + (double)linelinegthForTable / (double)editDistanceCount);
-        System.out.println("average of line length for table : " + (double)linelinegth / (double)editDistanceCountForTable);
-        System.out.println("average of right matching  : " + (double)rightMatchingRatioForOther + ","  + (double)editDistanceCount);
-        System.out.println("average of right matching for table : " + (double)rightMatchingRatioForTable  / (double)editDistanceCountForTable);
-        System.out.println("average of left matching  : " + (double)leftMatchingRatioForOther / (double)editDistanceCount);
-        System.out.println("average of left matching for table : " + (double)leftMatchingRatioForTable / (double)editDistanceCountForTable);
-
-        return allFeatures;
+          return allFeatures;
 
     }
 
     // I want to skip this line if it only contains tag without any main text because parsing tree doesn't exist for this line
     private boolean onlyContainsTag(String line) {
-        if (line.replace("</EQUATION>", "").trim().isEmpty()) return true;
-        else if (line.replace("</TABLE>", "").trim().isEmpty()) return true;
-        else if (line.replace("</CODE>", "").trim().isEmpty()) return true;
-        else if (line.replace("</MISCELLANEOUS>", "").trim().isEmpty()) return true;
+     //   System.out.println(line);
+        if (line.replace("</EQUATION>", "").trim().isEmpty()) {
+            tagClosed = true;
+            return true;
+        }
+        else if (line.replace("</TABLE>", "").trim().isEmpty()) {
+            tagClosed = true;
+            return true;
+        }
+        else if (line.replace("</CODE>", "").trim().isEmpty()) {
+            tagClosed = true;
+            return true;
+        }
+        else if (line.replace("</MISCELLANEOUS>", "").trim().isEmpty()) {
+            tagClosed = true;
+            return true;
+        }
         else if (line.replace("<MISCELLANEOUS>", "").trim().isEmpty()) return true;
         else if (line.replace("<CODE>", "").trim().isEmpty()) return true;
         else if (line.replace("<TABLE>", "").trim().isEmpty()) return true;
@@ -246,30 +361,18 @@ public class LineFeatureExtractor extends BasicFeatureExtractor {
         String prev_1_line = param.getPrev_1_line().replace("<TABLE>","").replace("</TABLE>","");
         String prev_2_line = param.getPrev_2_line().replace("<TABLE>","").replace("</TABLE>","");
 
-        String rline = DetectTable.encodeString(DetectTable.restoreParenthesis(line));
-        String rprev_1_line = DetectTable.encodeString(DetectTable.restoreParenthesis(prev_1_line));
-        String rprev_2_line = DetectTable.encodeString(DetectTable.restoreParenthesis(prev_2_line));
-        int edcount = DetectTable.getEditDistance(rline, rprev_1_line);
-        int edcount2 = DetectTable.getEditDistance(rline, rprev_2_line);
-        double probability = DetectTable.tableLMProbability(rline);
-        double rightMatchingRatio = DetectTable.getRatioRightMatching(rline, rprev_1_line);
+        String rline = tableDetecter.encodeString(tableDetecter.restoreParenthesis(line));
+        String rprev_1_line = tableDetecter.encodeString(tableDetecter.restoreParenthesis(prev_1_line));
+        String rprev_2_line = tableDetecter.encodeString(tableDetecter.restoreParenthesis(prev_2_line));
+        int edcount = tableDetecter.getEditDistance(rline, rprev_1_line);
+        int edcount2 = tableDetecter.getEditDistance(rline, rprev_2_line);
+        double probability = tableDetecter.tableLMProbability(rline);
+        double rightMatchingRatio = tableDetecter.getRatioRightMatching(rline, rprev_1_line);
       //  double leftMatchingRatio = DetectTable.getRatioLeftMatching(rline, rprev_1_line);
       //  int edcount2 = DetectTable.getEditDistance(rline, rprev_2_line);
 
         HashSet<Integer> featureNodeIndex = new HashSet<Integer>();
-        if(param.getTagType() == TagConstant.tableTag) {
-            System.out.println("TABLE: " + line + " --> "+ rline);
-        /*  System.out.println(line + "vs " + prev_1_line);
-            System.out.println(rline + " vs " + rprev_1_line + ": " + edcount + ":" + probability + ": " + rightMatchingRatio);
-            editDistanceSumForTable += edcount;
-            editDistanceCountForTable++;
-            patternProbWeightedEDForTable += edcount * probability;
-            linelinegthForTable += rline.length();
-            rightMatchingRatioForTable += rightMatchingRatio;
-            leftMatchingRatioForTable += leftMatchingRatio;
-        */
-     //     DetectTable.addAnnotationLine(DetectTable.encodeString(rline));
-        }
+
 
   /*      else {
             editDistanceSum += edcount;
@@ -359,9 +462,6 @@ public class LineFeatureExtractor extends BasicFeatureExtractor {
 
         }
 
-        if(param.getTagType() == TagConstant.codeTag) {
-            System.out.println(param.getCurrentLine());
-        }
         for(Integer id : codeDetect.elementSet()) {
             if (!featureNodeIndex.contains(id)) {
                 featureNodeIndex.add(id);
@@ -421,30 +521,22 @@ public class LineFeatureExtractor extends BasicFeatureExtractor {
     }
 
 
-    protected String predictAndRemoveComponent(FeatureParameter param){
+    protected int isThisLineNoise(FeatureParameter param){
         DEPTree tree = param.getParsingTree();
         int i, size = tree.size();
         tree.resetDependents();
-        StringBuilder noiseRemovedLine = new StringBuilder();
-        for (i = 1; i < size; i++) {
-            try {
-                param.setCurrentIndex(i);
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-            LinkedList<Feature> features = extractFeatures(param);
-            Collections.sort(features, fc);
+        LinkedList<Feature> features = extractFeatures(param);
+        Collections.sort(features, fc);
 
-            Feature[] featureArray;
-            featureArray = features.toArray(new Feature[features.size()]);
-            int prediction = (int) Linear.predict(FeatureParameter.secondModel, featureArray);
-            if (param.isNoise(prediction))
-                noiseRemovedLine.append(tree.get(i).form + " ");
-            componentCount[prediction]++;
+         Feature[] featureArray;
+         featureArray = features.toArray(new Feature[features.size()]);
+         int prediction = (int) Linear.predict(FeatureParameter.secondModel, featureArray);
+         componentCount[prediction]++;
+         previousNodePrediction = prediction;
 
+
+          return prediction;
         }
-        return noiseRemovedLine.toString();
-    }
 
 
 }

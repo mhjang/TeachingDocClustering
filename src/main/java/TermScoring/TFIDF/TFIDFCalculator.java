@@ -1,5 +1,6 @@
 package TermScoring.TFIDF;
 
+import Classify.noisegenerator.TableGenerator;
 import Clustering.Document;
 import Clustering.DocumentCollection;
 import indexing.NGramReader;
@@ -16,6 +17,7 @@ public class TFIDFCalculator {
     public static int LOGTFIDF = 1;
     public static int AUGMENTEDTFIDF = 2;
 
+    public static double noiseRatio = 0.3;
     public HashSet<String> stopwords = null;
     public HashMap<String, Document> documentSet = null;
     public HashMap<String, Integer> globalTermCountMap = null;
@@ -43,6 +45,19 @@ public class TFIDFCalculator {
         try {
             Tokenizer tokenizer = new Tokenizer();
             documentSet = tokenizer.tokenize(dir, wikifiltering, ngram);
+            dc = runTFIDF(TFOption);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+
+    public void calulateTFIDFWithNoise(int TFOption, String dir, int ngram, boolean wikifiltering, TableGenerator tableGenerator) {
+        this.TFOption = TFOption;
+        try {
+            Tokenizer tokenizer = new Tokenizer();
+            tokenizer.setTableGenerator(tableGenerator);
+            documentSet = tokenizer.tokenizeWithNoise(dir, wikifiltering, ngram, noiseRatio);
             dc = runTFIDF(TFOption);
         } catch (IOException e) {
             e.printStackTrace();
