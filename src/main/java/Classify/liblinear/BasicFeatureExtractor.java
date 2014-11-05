@@ -72,7 +72,8 @@ public abstract class BasicFeatureExtractor {
     LinkedList<Feature[]> allFeatures;
 
     ArrayList<Double> answers = new ArrayList<Double>();
-    public int featureNodeNum = 3;
+    public int featureNodeNum = 1;
+
 
     Model model;
 
@@ -93,9 +94,9 @@ public abstract class BasicFeatureExtractor {
     int[] componentCount;
 
 
-    abstract public LinkedList<Feature[]> run(String baseDir, ArrayList<String> data, boolean applyModel);
+    abstract public LinkedList<Feature[]> run(String baseDir, ArrayList<String> data, boolean learningMode);
 
-    abstract protected void addFeature(FeatureParameter param);
+    abstract protected int addFeature(FeatureParameter param);
 
     abstract public TableGenerator getTableGenerator();
 
@@ -109,6 +110,7 @@ public abstract class BasicFeatureExtractor {
     }
 
     int getFeatureIndex(String word) {
+        word = word.toLowerCase();
         if (featureMap.containsKey(word))
             return featureMap.get(word);
         else {
@@ -117,6 +119,10 @@ public abstract class BasicFeatureExtractor {
             featureNodeNum++;
         }
         return featureMap.get(word);
+    }
+
+    public HashMap<String, Integer> getFeatureIndexDic() {
+        return featureMap;
     }
 
     static String getFeatureWord(int featureId) {

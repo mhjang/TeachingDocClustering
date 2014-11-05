@@ -10,11 +10,8 @@ import de.bwaldvogel.liblinear.Model;
  */
 public class FeatureParameter {
     // required parameters
-    private final int isThisLineCode;
-    private final boolean isThisLineEquation;
-    private final boolean isThisLineTable;
     public static boolean predictPreviousNode = false;
-    private final int keywordContain;
+    private double location;
     // optional parameters
     private FragmentIndex componentFrag;
     private FragmentIndex tokenFrag;
@@ -34,6 +31,10 @@ public class FeatureParameter {
     private String prev_1_line;
     private String prev_2_line;
 
+    public static boolean useSequentialFeature = true;
+    public static boolean featureIndexReset = false;
+
+
     public static void setModelSet(Model m1, Model m2) {
         firstModel = m1;
         secondModel = m2;
@@ -49,10 +50,6 @@ public class FeatureParameter {
 
     public static class Builder {
         // required parameters
-        private final int isThisLineCode;
-        private final boolean isThisLineEquation;
-        private final boolean isThisLineTable;
-        private final int keywordContain;
         // optional parameters
         private FragmentIndex componentFrag;
         private FragmentIndex tokenFrag;
@@ -68,16 +65,12 @@ public class FeatureParameter {
         private String prev_1_line;
         private String prev_2_line;
         private Model model = null;
+        private double location;
 
-        public Builder(DEPTree tree_, int isThisLineCode_, int keywordContain_, boolean isThisLineEquation_, boolean isThisLineTable_, boolean applyModel_) {
+        // locaiton: relative location of the sentence in the document
+        public Builder(DEPTree tree_, double location) {
             this.tree = tree_;
-            this.isThisLineCode = isThisLineCode_;
-            this.isThisLineEquation = isThisLineEquation_;
-            this.isThisLineTable = isThisLineTable_;
-            this.keywordContain = keywordContain_;
-
-
-
+            this.location = location;
         }
 
         public Builder componentFrag(FragmentIndex componentFrag_) {
@@ -137,10 +130,7 @@ public class FeatureParameter {
     private FeatureParameter(Builder builder) {
         this.componentFrag = builder.componentFrag;
         this.tokenFrag = builder.tokenFrag;
-        this.isThisLineCode = builder.isThisLineCode;
-        this.isThisLineEquation = builder.isThisLineEquation;
-        this.isThisLineTable = builder.isThisLineTable;
-        this.keywordContain = builder.keywordContain;
+        this.location = builder.location;
         this.tree = builder.tree;
         this.tagType = builder.tagType;
         this.excludeCode = builder.excludeCode;
@@ -162,12 +152,6 @@ public class FeatureParameter {
     public FragmentIndex getComponentFrag() { return componentFrag; }
 
     public FragmentIndex getTokenFrag()  { return  tokenFrag;    }
-
-    public boolean isThisLineEquation() {     return isThisLineEquation;  }
-
-    public int isThisLineCode() {     return isThisLineCode;  }
-
-    public boolean isThisLineTable() {     return isThisLineTable;  }
 
     public DEPTree getParsingTree() {   return tree;    }
 
@@ -192,10 +176,6 @@ public class FeatureParameter {
         if(!excludeMisc)
             if(prediction >= TagConstant.BEGINMISC && prediction <= TagConstant.ENDMISC) return true;
         return false;
-    }
-
-    public int getKeywordContain() {
-        return keywordContain;
     }
 
     public String getCurrentLine() { return line; }

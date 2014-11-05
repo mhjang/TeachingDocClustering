@@ -4,6 +4,7 @@ import Classify.liblinear.datastructure.FeatureParameter;
 import Classify.noisegenerator.TableGenerator;
 import de.bwaldvogel.liblinear.*;
 
+import java.io.*;
 import java.util.*;
 
 /**
@@ -38,20 +39,41 @@ public class FeatureExtractor {
         }
         else
             extractor = new TokenFeatureExtractor(isLearningMode);
-        if(!isLearningMode) {
+   /*     if(!isLearningMode) {
             if(FeatureParameter.firstModel == null || FeatureParameter.secondModel == null) {
                 System.out.println("Error: Models have to be set at FeatureParameter to apply classifiers to the documents!");
                 System.out.println("Set the saved models at FeatureParameter.setModels(first, second)");
                 return null;
             }
         }
+        */
+
+
+
+
         return extractor.run(baseDir, fileList, isLearningMode);
+    }
+
+    public void generateFeatureIndexFile() {
+        HashMap<String, Integer> featureMap = extractor.getFeatureDictionary();
+        try {
+            BufferedWriter bw = new BufferedWriter(new FileWriter(new File("feature.dat")));
+            for(String word : featureMap.keySet()) {
+                // the index number first because it's easier for parsing later
+                bw.write(featureMap.get(word) + ":" + word + "\n");
+            }
+            bw.close();
+            System.out.println("features are written at feature.dat");
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
     }
 
 
     // # of training instances
     public int getNumOfInstances() {
-        return extractor.featureNodeNum - 1;
+        return extractor.featureNodeNum;
     }
     // for evaluation
     public double[] getTrainingAnswers() {

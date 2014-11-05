@@ -123,7 +123,8 @@ public class TokenFeatureExtractor extends BasicFeatureExtractor {
                     if (!line.isEmpty()) {
                         LinkedList<String> tokens = new LinkedList<String>();
                         int startIdx = 0;
-                        FeatureParameter param = new FeatureParameter.Builder(treelist.get(treeIdx), DetectCodeComponent.codeLineEvidence(line), DetectCodeComponent.keywordContainSize(line),DetectEquation.isEquation(line), tableDetecter.isTable(line), true).build();
+                        double location = 0.0;
+                        FeatureParameter param = new FeatureParameter.Builder(treelist.get(treeIdx), location).build();
                         noiseRemovedline = generateApplyFeatures(param);
                         treeIdx++;
                         fwriter.writeLine(noiseRemovedline);
@@ -163,16 +164,15 @@ public class TokenFeatureExtractor extends BasicFeatureExtractor {
      * Extract features for building the model
      * @override
      * @param data
-     * @param applyModel: whether you use a trained model to fill out "previous label" feature
      * @return
      * @throws java.io.IOException
      */
-    public LinkedList<Feature[]> run(String baseDir, ArrayList<String> data, boolean applyModel)  {
+    public LinkedList<Feature[]> run(String baseDir, ArrayList<String> data, boolean learningMode)  {
         //     read all annotated files from the directory
         //     String directory = "/Users/mhjang/Desktop/clearnlp/trainingdata/annotation/";
         // baseDir = "/Users/mhjang/Desktop/clearnlp/allslides/";
         allFeatures = new LinkedList<Feature[]>();
-        String parsedDir = baseDir + "parsed/";
+    /*    String parsedDir = baseDir + "parsed/";
         String annotationDir = baseDir + "annotation/";
         if (applyModel) {
             model = loadModel();
@@ -210,19 +210,19 @@ public class TokenFeatureExtractor extends BasicFeatureExtractor {
 
                 while (freader.hasMoreLines()) {
                     line = freader.readLine();
-                    /**
-                     * beginToken: begin of the component over the lines. It is set only if the begin tag is present in the current line; Otherwise set to -1
-                     endToken: end of the component over the lines. It is set only if the end tag is present in the current line; Otherwise set to -1
-                     componentBegin: begin of the component in this line.
-                     componentEnd: begin of the component in this line.
-                     */
+
+                     //beginToken: begin of the component over the lines. It is set only if the begin tag is present in the current line; Otherwise set to -1
+                     //endToken: end of the component over the lines. It is set only if the end tag is present in the current line; Otherwise set to -1
+                     //componentBegin: begin of the component in this line.
+                     //componentEnd: begin of the component in this line.
+
                     int beginToken = -1, endToken = -1;
                     int componentBegin = -1, componentEnd = -1;
-                    /**
-                     * treeIdxSkip: a flag that determines whether or not to skip current line
-                     * clearNLP skipped an empty line. To find the matching tree, an empty line in the annotation should also be skipped.
-                     *
-                     */
+
+                     // treeIdxSkip: a flag that determines whether or not to skip current line
+                     // clearNLP skipped an empty line. To find the matching tree, an empty line in the annotation should also be skipped.
+
+
                     boolean treeIdxSkip = false;
                     line = line.trim();
 
@@ -240,11 +240,11 @@ public class TokenFeatureExtractor extends BasicFeatureExtractor {
                             }
                         }
                         if (initiatedTag != null) {
-                            /**
-                             * If initiated tag is JUST SET, that means we have a begin tag in this line.
-                             (1) To set this location to beginToken, first find the character offset of this begin tag to find the token location
-                             (2) Find the matching end tag
-                             */
+
+                             // If initiated tag is JUST SET, that means we have a begin tag in this line.
+                             // (1) To set this location to beginToken, first find the character offset of this begin tag to find the token location
+                             // (2) Find the matching end tag
+
                             if (isTagBeginLine) {
                                 startIdx = (line.indexOf(initiatedTag) + initiatedTag.length() + 1 < line.length()) ? line.indexOf(initiatedTag) + initiatedTag.length() + 1 : 0;
                                 // because of the tag itself, minus one
@@ -294,11 +294,12 @@ public class TokenFeatureExtractor extends BasicFeatureExtractor {
         } catch (Exception e) {
             e.printStackTrace();
         }
+        */
         return allFeatures;
     }
 
 
-    protected void addFeature(FeatureParameter param)  {
+    protected int addFeature(FeatureParameter param)  {
         NonTextualComponent component = NonTextualComponent.getComponent(param.getTagType());
         DEPTree tree = param.getParsingTree();
         int i, size = tree.size();
@@ -337,6 +338,7 @@ public class TokenFeatureExtractor extends BasicFeatureExtractor {
             featureIdx++;
             allFeatures.add(featureArray);
     }
+        return 0;
 }
 
 
@@ -477,26 +479,26 @@ public class TokenFeatureExtractor extends BasicFeatureExtractor {
             /**
              * Is this line of the token a code line?
              */
-            features.add(new FeatureNode(getFeatureIndex(IS_CODELINE), param.isThisLineCode()));
+          //  features.add(new FeatureNode(getFeatureIndex(IS_CODELINE), param.isThisLineCode()));
 
             /**
              * How many programming keywords does this line contain?
              */
-            features.add(new FeatureNode(getFeatureIndex(KEYWORD_CONTAIN), param.getKeywordContain()));
+         //   features.add(new FeatureNode(getFeatureIndex(KEYWORD_CONTAIN), param.getKeywordContain()));
         }
 
         /****************************
          * Equation component baseline
          ****************************/
-        if (equationBaselineOn)
-            features.add(new FeatureNode(getFeatureIndex(IS_EQUATION), param.isThisLineEquation() ? 1 : 0));
+      //  if (equationBaselineOn)
+      //      features.add(new FeatureNode(getFeatureIndex(IS_EQUATION), param.isThisLineEquation() ? 1 : 0));
 
 
         /****************************
          * Table component baseline
          ****************************/
-        if (tableBaselineOn)
-            features.add(new FeatureNode(getFeatureIndex(IS_TABLE), param.isThisLineTable() ? 1 : 0));
+     //   if (tableBaselineOn)
+     //       features.add(new FeatureNode(getFeatureIndex(IS_TABLE), param.isThisLineTable() ? 1 : 0));
 
 
         /**************************************************

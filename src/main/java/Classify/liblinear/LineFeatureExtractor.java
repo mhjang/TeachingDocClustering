@@ -20,7 +20,7 @@ import de.bwaldvogel.liblinear.Linear;
 import simple.io.myungha.SimpleFileReader;
 import simple.io.myungha.SimpleFileWriter;
 
-import java.io.IOException;
+import java.io.*;
 import java.util.*;
 
 /**
@@ -43,15 +43,27 @@ public class LineFeatureExtractor extends BasicFeatureExtractor {
     double leftMatchingRatioForOther = 0.0;
     double leftMatchingRatioForTable = 0.0;
     double previousNodePrediction;
+    double currentNodePrediction;
+    boolean print = false;
 
     boolean tagClosed = false;
     DetectTable tableDetecter;
     TableGenerator tableGenerator;
+    BufferedWriter bw;
+
+
     public LineFeatureExtractor(boolean isLearningMode) {
         this.isLearningMode = isLearningMode;
+
         tableDetecter = new DetectTable();
         tableGenerator = new TableGenerator();
+        try {
+            bw = new BufferedWriter(new FileWriter(new File("test.dat")));
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
+
 
     public TableGenerator getTableGenerator() {
         return tableGenerator;
@@ -61,11 +73,10 @@ public class LineFeatureExtractor extends BasicFeatureExtractor {
      * Extract features for building the model
      * @override
      * @param data
-     * @param applyModel: whether you use a trained model to fill out "previous label" feature
      * @return
      * @throws java.io.IOException
      */
-    public LinkedList<Feature[]> run(String baseDir, ArrayList<String> data, boolean applyModel) {
+    public LinkedList<Feature[]> run(String baseDir, ArrayList<String> data, boolean learningMode) {
         allFeatures = new LinkedList<Feature[]>();
         String parsedDir = baseDir + "parsed/";
         String annotationDir = baseDir + "annotation/";
@@ -89,15 +100,37 @@ public class LineFeatureExtractor extends BasicFeatureExtractor {
 
 
 
-        if (applyModel) {
-            model = loadModel();
-        }
-
         //initialize component count
 
         componentCount = new int[5];
         for (int i = 0; i < 5; i++) {
             componentCount[i] = 0;
+        }
+
+
+        // read feature.dat
+        if(!FeatureParameter.featureIndexReset) {
+            try {
+                System.out.println("reading features..");
+                BufferedReader br = new BufferedReader(new FileReader(new File("feature.dat")));
+                String line;
+                while ((line = br.readLine()) != null) {
+                    StringTokenizer st = new StringTokenizer(line, ":", true);
+                    int index = Integer.parseInt(st.nextToken());
+                    st.nextToken(); // throwing the first delim
+                    StringBuilder sb = new StringBuilder();
+                    while (st.hasMoreTokens()) {
+                        sb.append(st.nextToken());
+                    }
+                    String value = sb.toString();
+                    System.out.println(index + ": " + value);
+                    featureMap.put(value, index);
+                    featureinverseMap.put(index, value);
+                }
+                featureNodeNum = featureMap.size();
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
         }
 
         Multiset<String> globalComponentCount = HashMultiset.create();
@@ -106,9 +139,11 @@ public class LineFeatureExtractor extends BasicFeatureExtractor {
             for (String filename : data) {
                 DEPReader reader = new DEPReader(0, 1, 2, 3, 4, 5, 6);
                 initiatedTag = null;
-
+                // resetting for each doucment
+                previousNodePrediction  = TagConstant.TEXT;
                 Multiset<String> componentCount = HashMultiset.create();
                 if (filename.contains(".DS_Store")) continue;
+                print = false;
                 // open a corresponding parsed file
                 reader.open(UTInput.createBufferedFileReader(parsedDir + filename + ".cnlp"));
                 DEPTree tree;
@@ -173,6 +208,7 @@ public class LineFeatureExtractor extends BasicFeatureExtractor {
                 int j = 0;
 
                 LinkedList<String> table = new LinkedList<String>();
+                int documentLength = annotatedLines.size();
                 for (int i = 0; i < annotatedLines.size(); i++) {
                     boolean treeIdxSkip = false;
                     //     System.out.println(filename + ": " + annotatedLines.get(i) + "vs  "+ originalLines.get(i));
@@ -228,14 +264,12 @@ public class LineFeatureExtractor extends BasicFeatureExtractor {
 
 
                     if (!onlyContainsTag(line)) {
-                        int keywordContain = DetectCodeComponent.keywordContainSize(line);
                         FeatureParameter param;
-                        param = new FeatureParameter.Builder(treelist.get(treeIdx), DetectCodeComponent.codeLineEvidence(line),
-                                keywordContain, DetectEquation.isEquation(line), tableDetecter.isTable(textLine),
-                                applyModel).tagType(initiatedTag).setLines(prevLine_2, prevLine_1, line).build();
-                        if (isLearningMode) addFeature(param);
-                        else {
-                            int component = isThisLineNoise(param);
+                        double location = (double)i / (double)documentLength;
+                        param = new FeatureParameter.Builder(treelist.get(treeIdx), location)
+                                .tagType(initiatedTag).setLines(prevLine_2, prevLine_1, line).build();
+                        int component = addFeature(param);
+                        if(!isLearningMode) {
                             if (component == TagConstant.TEXT) {
                                 writer.writeLine(line);
                                 htmlWriter.writeLine("<tr><td>" + line + "</td></tr>");
@@ -247,7 +281,7 @@ public class LineFeatureExtractor extends BasicFeatureExtractor {
                                 if (component == TagConstant.BEGINTABLE) {
                                     htmlWriter.writeLine("<tr><td class=\"table\"> [Table] " + line + "</td></tr>");
                                     componentCount.add("TABLE");
-                                    System.out.println(line);
+                          //          System.out.println(line);
                            //         removedTableWriter.writeLine(line);
                                 } else if (component == TagConstant.BEGINCODE) {
                                     htmlWriter.writeLine("<tr><td class=\"code\"> [Code] " + line + "</td></tr>");
@@ -353,7 +387,7 @@ public class LineFeatureExtractor extends BasicFeatureExtractor {
         int size = tree.size(), featureIndx;
         Multiset<Integer> dependentRelationBag = HashMultiset.create();
         Multiset<Integer> grams = HashMultiset.create();
-        Multiset<Integer> codeDetect = HashMultiset.create();
+        Multiset<String> codeDetect = HashMultiset.create();
         Multiset<Integer> posTagBag = HashMultiset.create();
 
        // Table component baseline
@@ -385,17 +419,17 @@ public class LineFeatureExtractor extends BasicFeatureExtractor {
         }
 */
 
-        features.add(new FeatureNode(getFeatureIndex("EDIT_DISTANCE"), edcount));
-        features.add(new FeatureNode(getFeatureIndex("EDIT_DISTANCE2"), edcount2));
-        features.add(new FeatureNode(getFeatureIndex("COMPLEXITY"), edcount + probability));
+        features.add(new FeatureNode(getFeatureIndex("FEATURE_EDIT_DISTANCE"), edcount));
+        features.add(new FeatureNode(getFeatureIndex("FEATURE_EDIT_DISTANCE2"), edcount2));
+        features.add(new FeatureNode(getFeatureIndex("FEATURE_COMPLEXITY"), edcount + probability));
    //   features.add(new FeatureNode(getFeatureIndex("WEIGHTED_ED"), edcount * probability));
    //   features.add(new FeatureNode(getFeatureIndex))
         features.add(new FeatureNode(getFeatureIndex(rline), 1));
   //    features.add(new FeatureNode(getFeatureIndex("NUMBERTOKEN"), DetectTable.getNumberTokenCount(rline)));
   //    features.add(new FeatureNode(getFeatureIndex("NUMBERTOKEN2"), Math.abs(DetectTable.getNumberTokenCount(rline) - DetectTable.getNumberTokenCount(rprev_1_line))));
-        features.add(new FeatureNode(getFeatureIndex("LENGTH_DIFF"), Math.abs(rline.length() - rprev_1_line.length())));
+        features.add(new FeatureNode(getFeatureIndex("FEATURE_LENGTH_DIFF"), Math.abs(rline.length() - rprev_1_line.length())));
   //    features.add(new FeatureNode(getFeatureIndex("RIGHTMATCHING"), DetectTable.getRatioRightMatching(line, prev_1_line)));
-        features.add(new FeatureNode(getFeatureIndex("RIGHT_MATCHING"), rightMatchingRatio));
+        features.add(new FeatureNode(getFeatureIndex("FEATURE_RIGHT_MATCHING"), rightMatchingRatio));
   //    features.add(new FeatureNode(getFeatureIndex("LEFT_MATCHING"), leftMatchingRatio));
 
         featureNodeIndex.add(getFeatureIndex(rline));
@@ -410,8 +444,6 @@ public class LineFeatureExtractor extends BasicFeatureExtractor {
                 dependentRelationBag.add(getFeatureIndex(node.pos + " " + darc.getNode().pos));
                 dependentRelationBag.add(depId);
             }
-
-
             // unigram feature
             grams.add(getFeatureIndex(node.form));
             // bigram features
@@ -422,29 +454,30 @@ public class LineFeatureExtractor extends BasicFeatureExtractor {
 
             // Code component baseline
 
+            /*
             if (codeBaselineFeatureOn) {
 
                  // Is this token a bracket?
-                codeDetect.add(getFeatureIndex(IS_BRACKET), DetectCodeComponent.isBracket(node.form) ? 1 : 0);
+                codeDetect.add(IS_BRACKET, DetectCodeComponent.isBracket(node.form) ? 1 : 0);
 
                 // Is this token a Camal case variable name?
-                codeDetect.add(getFeatureIndex(IS_VARIABLE), DetectCodeComponent.isVariable(node.form) ? 1 : 0);
+                codeDetect.add(IS_VARIABLE, DetectCodeComponent.isVariable(node.form) ? 1 : 0);
 
                 // Is this token a comment "//"?
-                codeDetect.add(getFeatureIndex(IS_COMMENT), DetectCodeComponent.isComment(node.form) ? 1 : 0);
+                codeDetect.add(IS_COMMENT, DetectCodeComponent.isComment(node.form) ? 1 : 0);
 
                 // Is this token a programming operator?
-                codeDetect.add(getFeatureIndex(IS_OPERATOR), DetectCodeComponent.isOperator(node.form) ? 1 : 0);
+                codeDetect.add(IS_OPERATOR, DetectCodeComponent.isOperator(node.form) ? 1 : 0);
 
                 // Is this token a parenthesis?
-                codeDetect.add(getFeatureIndex(IS_PARENTHESIS), DetectCodeComponent.isParenthesis(node.form) ? 1 : 0);
+                codeDetect.add(IS_PARENTHESIS, DetectCodeComponent.isParenthesis(node.form) ? 1 : 0);
 
                 // Is this token a parenthesis?
-                codeDetect.add(getFeatureIndex(IS_SEMICOLON), DetectCodeComponent.isSemicolon(node.form) ? 1 : 0);
+                codeDetect.add(IS_SEMICOLON, DetectCodeComponent.isSemicolon(node.form) ? 1 : 0);
 
                 // keyword contain
-                codeDetect.add(getFeatureIndex(KEYWORD_CONTAIN), DetectCodeComponent.isThisKeyword(node.form) ? 1 : 0);
-            }
+                codeDetect.add(KEYWORD_CONTAIN, DetectCodeComponent.isThisKeyword(node.form) ? 1 : 0);
+            } */
         }
 
         for(Integer id : dependentRelationBag.elementSet()) {
@@ -462,12 +495,13 @@ public class LineFeatureExtractor extends BasicFeatureExtractor {
 
         }
 
-        for(Integer id : codeDetect.elementSet()) {
+     /*   for(Integer id : codeDetect.elementSet()) {
             if (!featureNodeIndex.contains(id)) {
                 featureNodeIndex.add(id);
                 features.add(new FeatureNode(id, codeDetect.count(id)));
             }
         }
+        */
 
         for(Integer id : grams.elementSet()) {
             if(!featureNodeIndex.contains(id)) {
@@ -476,50 +510,72 @@ public class LineFeatureExtractor extends BasicFeatureExtractor {
             }
         }
 
-        if (structuralFeatureOn) {
-            if (featureIdx > 0)
-                if (param.isApplyModel())
-                    features.add(new FeatureNode(getFeatureIndex(PREVIOUS_LABEL), previousNodePrediction));
-                else features.add(new FeatureNode(getFeatureIndex(PREVIOUS_LABEL), answers.get(featureIdx - 1)));
-            else
-                features.add(new FeatureNode(getFeatureIndex(PREVIOUS_LABEL), 0));
+        features.add(new FeatureNode(getFeatureIndex("PREVIOUS_NODE_PREDICTION"), previousNodePrediction));
 
-        }
         return features;
     }
 
 
 
+
     // this includes annotation tag, features, and using annotation as "previous label" features for cross validation
-    protected void addFeature(FeatureParameter param) {
+    protected int addFeature(FeatureParameter param) {
         NonTextualComponent component = NonTextualComponent.getComponent(param.getTagType());
         DEPTree tree = param.getParsingTree();
         int i, size = tree.size();
         tree.resetDependents();
+        if(param.getCurrentLine().equals("linear run-time complexity , our parser is")) {
+            boolean a = true;
+        }
         LinkedList<Feature> features = extractFeatures(param);
 
-        // determine whether the given token is the begin / middle / end of the component
-        if (component != null) {
-            answers.add((double)component.intermediate);
-        } else {
-            answers.add((double)TagConstant.TEXT);
-        }
         // System.out.println(param.getTagType() + ": " + answers[featureIdx]);
         originalTextLines.add(param.getCurrentLine());
-
         Collections.sort(features, fc);
-
         Feature[] featureArray;
         featureArray = features.toArray(new Feature[features.size()]);
 
-        // save current prediction to use as a feature for the next label
-        if (param.isApplyModel()) {
-            previousNodePrediction = Linear.predict(FeatureParameter.firstModel, featureArray);
+        double answer;
+        if (component != null)
+            answer = component.intermediate;
+        else
+            answer = TagConstant.TEXT;
+
+
+        if(FeatureParameter.useSequentialFeature) {
+        // for the second model learning
+            if (FeatureParameter.predictPreviousNode) {
+                currentNodePrediction = Linear.predict(FeatureParameter.firstModel, featureArray);
+            } else {
+                // but feature array shouldn't include previous node prediction here
+                currentNodePrediction = answer;
+            }
         }
-        featureIdx++;
+        // for the first model learning
+        else {
+            currentNodePrediction = 0.0;
+        }
+
+        previousNodePrediction = currentNodePrediction;
         allFeatures.add(featureArray);
+        answers.add(answer);
+        // return the prediction for apply mode
+        int prediction;
+        // if it's during the first model learning mode
+        if(FeatureParameter.firstModel == null) prediction = -1; // no prediction's made yet
+        // if it's during the first model testing mode
+        else {
+            if(FeatureParameter.secondModel == null)
+                prediction = (int) Linear.predict(FeatureParameter.firstModel, featureArray);
+            else
+                prediction = (int) Linear.predict(FeatureParameter.secondModel, featureArray);
+        }
+
+        featureIdx++;
+        return prediction;
     }
 
+    /*
 
     protected int isThisLineNoise(FeatureParameter param){
         DEPTree tree = param.getParsingTree();
@@ -538,7 +594,7 @@ public class LineFeatureExtractor extends BasicFeatureExtractor {
           return prediction;
         }
 
-
+    */
 }
 
 

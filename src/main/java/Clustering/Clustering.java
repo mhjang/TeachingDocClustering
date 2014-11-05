@@ -51,7 +51,7 @@ public class Clustering {
         SVMClassifier svm = new SVMClassifier();
         String baseDir = "/Users/mhjang/Desktop/clearnlp/acl/training/";
 
-        svm.runFiveFoldCrossValidation(baseDir, false, true, FeatureExtractor.LINE_BASED);
+    //    svm.runFiveFoldCrossValidation(baseDir, false, true, FeatureExtractor.LINE_BASED);
         TableGenerator t = svm.getTableGenerator();
    //     TableGenerator t= new TableGenerator();
         System.out.println("Table size: " + t.getSize());
