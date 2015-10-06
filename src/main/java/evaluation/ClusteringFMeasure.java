@@ -25,13 +25,24 @@ public class ClusteringFMeasure {
     ArrayList<String> topiclist;
     DocumentCollection dc;
 
-    public ClusteringFMeasure(HashMap<String, LinkedList<String>> clusters_, HashMap<String, Integer> clusterLabelMap_, ArrayList<String> topiclist_, String goldDir, DocumentCollection dc) {
-        clusters = clusters_;
-        clusterLabelMap = clusterLabelMap_;
+    public ClusteringFMeasure(HashMap<String, LinkedList<String>> clusters_, String topicDir, String goldDir, DocumentCollection dc) {
+        try {
+            Integer clusterLabelIndex = 0;
+            clusterLabelMap = new HashMap<String, Integer>();
 
-        goldClusters = readGoldstandard(goldDir);
-        this.topiclist = topiclist_;
-        this.dc = dc;
+            BufferedReader br = new BufferedReader(new FileReader(new File(topicDir)));
+            topiclist = new ArrayList<String>();
+            String line = null;
+            while ((line = br.readLine()) != null) {
+                topiclist.add(line);
+                clusterLabelMap.put(line, clusterLabelIndex++);
+            }
+            clusters = clusters_;
+            goldClusters = readGoldstandard(goldDir);
+            this.dc = dc;
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 
     // this is a horrible constructor design... refactor later
@@ -242,6 +253,16 @@ public class ClusteringFMeasure {
         }
         computeAccuracy();
         return clusters;
+    }
+
+
+    // returns true if two documents are in the same category cluster
+    public boolean isSameClass(String doc1, String doc2) {
+        for(String clusterName : topiclist) {
+            HashSet<String> goldCluster = goldClusters.get(clusterLabelMap.get(clusterName));
+            if (goldCluster.contains(doc1) && goldCluster.contains(doc2)) return true;
+        }
+        return false;
     }
     public void computeAccuracy() {
         double avgPrecision = 0.0, avgRecall = 0.0;

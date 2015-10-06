@@ -3,6 +3,7 @@ package Classify.liblinear;
 import Classify.TagConstant;
 import Classify.liblinear.datastructure.NonTextualComponent;
 import Classify.liblinear.datastructure.FeatureParameter;
+import Classify.liblinear.datastructure.WordVector;
 import Classify.noisegenerator.TableGenerator;
 import com.clearnlp.dependency.DEPArc;
 import com.clearnlp.dependency.DEPNode;
@@ -12,7 +13,6 @@ import com.clearnlp.util.UTInput;
 import com.google.common.collect.HashMultiset;
 import com.google.common.collect.Multiset;
 import componentDetection.DetectCodeComponent;
-import componentDetection.DetectEquation;
 import componentDetection.DetectTable;
 import de.bwaldvogel.liblinear.Feature;
 import de.bwaldvogel.liblinear.FeatureNode;
@@ -51,12 +51,13 @@ public class LineFeatureExtractor extends BasicFeatureExtractor {
     TableGenerator tableGenerator;
     BufferedWriter bw;
 
+    VectorLookUp vlu;
 
     public LineFeatureExtractor(boolean isLearningMode) {
         this.isLearningMode = isLearningMode;
-
         tableDetecter = new DetectTable();
-        tableGenerator = new TableGenerator();
+    //    tableGenerator = new TableGenerator();
+        vlu = new VectorLookUp();
         try {
             bw = new BufferedWriter(new FileWriter(new File("test.dat")));
         } catch (IOException e) {
@@ -89,6 +90,7 @@ public class LineFeatureExtractor extends BasicFeatureExtractor {
 //        String miscRemoved = baseDir + "miscRemoved/";
 
         String output = baseDir + "output/";
+        String sent2vecDir = baseDir + "sentvec/";
 
         SimpleFileWriter writer = null;
         SimpleFileWriter removedWriter = null;
@@ -160,7 +162,7 @@ public class LineFeatureExtractor extends BasicFeatureExtractor {
                 System.out.println(filename);
 
                 SimpleFileReader treader = new SimpleFileReader(originalDir + filename);
-
+       //         SimpleFileReader vecReader = new SimpleFileReader(sent2vecDir + filename + ".vec");
                 boolean isTagBeginLine = false;
                 String endTag = null;
 
@@ -181,11 +183,27 @@ public class LineFeatureExtractor extends BasicFeatureExtractor {
                 }
                 // reading "/text" files
                 ArrayList<String> originalLines = new ArrayList<String>();
+       //         vecReader.hasMoreLines(); // reading away the first line
+                String v = "";
+                ArrayList<double[]> vectorLines = new ArrayList<double[]>();
                 while (treader.hasMoreLines()) {
+      //              vecReader.hasMoreLines();
                     l = treader.readLine();
+     //               v = vecReader.readLine();
                     if (l.isEmpty() || l.trim().length() == 0 || l.replace(" ", "").length() == 0) continue;
-                    else originalLines.add(l);
+                    else {
+                        originalLines.add(l);
+
+                        String[] tokens = v.split(" ");
+                        double[] vector = new double[200];
+                        for(int i=0; i<tokens.length - 1; i++) {
+                            vector[i] = Double.parseDouble(tokens[i+1]);
+                        }
+
+                        vectorLines.add(vector);
+                    }
                 }
+                assert(originalLines.size() == vectorLines.size());
                 //     System.out.println(annotatedLines.size() + " lines vs " + originalLines.size());
 
 
@@ -209,9 +227,10 @@ public class LineFeatureExtractor extends BasicFeatureExtractor {
 
                 LinkedList<String> table = new LinkedList<String>();
                 int documentLength = annotatedLines.size();
+                double[] vector;
                 for (int i = 0; i < annotatedLines.size(); i++) {
                     boolean treeIdxSkip = false;
-                    //     System.out.println(filename + ": " + annotatedLines.get(i) + "vs  "+ originalLines.get(i));
+                    System.out.println(filename + ": " + annotatedLines.get(i) + "vs  "+ originalLines.get(i));
                     line = annotatedLines.get(i);
                     tagRemoved = line;
 
@@ -241,7 +260,8 @@ public class LineFeatureExtractor extends BasicFeatureExtractor {
                     }
 
 
-                    textLine = originalLines.get(j++);
+                    textLine = originalLines.get(j);
+                    vector = vectorLines.get(j++);
 
              //       if(line.trim().toLowerCase().charAt(0) != textLine.trim().toLowerCase().charAt(0))
              //           System.out.println(i + ":" + line + " vs " + textLine);
@@ -267,7 +287,7 @@ public class LineFeatureExtractor extends BasicFeatureExtractor {
                         FeatureParameter param;
                         double location = (double)i / (double)documentLength;
                         param = new FeatureParameter.Builder(treelist.get(treeIdx), location)
-                                .tagType(initiatedTag).setLines(prevLine_2, prevLine_1, line).build();
+                                .tagType(initiatedTag).setLines(prevLine_2, prevLine_1, line).setVector(vector).build();
                         int component = addFeature(param);
                         if(!isLearningMode) {
                             if (component == TagConstant.TEXT) {
@@ -311,7 +331,7 @@ public class LineFeatureExtractor extends BasicFeatureExtractor {
                     if (tagClosed) {
                         if(initiatedTag != null) {
                             if (initiatedTag.equals(TagConstant.tableTag)) {
-                                tableGenerator.addTable(table);
+                      //          tableGenerator.addTable(table);
                                 table = new LinkedList<String>();
                             }
                         }
@@ -432,18 +452,34 @@ public class LineFeatureExtractor extends BasicFeatureExtractor {
         features.add(new FeatureNode(getFeatureIndex("FEATURE_RIGHT_MATCHING"), rightMatchingRatio));
   //    features.add(new FeatureNode(getFeatureIndex("LEFT_MATCHING"), leftMatchingRatio));
 
+
+
+        // added word embeddings features 9/26/15
+
+         WordVector lineVector = new WordVector();
+
+
         featureNodeIndex.add(getFeatureIndex(rline));
 
         for(int i=1; i<size; i++) {
             DEPNode node = tree.get(i);
+
+            WordVector wordVector = vlu.getWordVector(node.form.toLowerCase());
+            if(wordVector != null) {
+                lineVector.addVector(wordVector);
+            }
+
             List<DEPArc> dependents = node.getDependents();
             // check feature index duplicate
             HashSet<Integer> featureIndex = new HashSet<Integer>();
+
             for (DEPArc darc : dependents) {
                 int depId = getFeatureIndex(darc.getLabel());
                 dependentRelationBag.add(getFeatureIndex(node.pos + " " + darc.getNode().pos));
                 dependentRelationBag.add(depId);
             }
+
+
             // unigram feature
             grams.add(getFeatureIndex(node.form));
             // bigram features
@@ -454,7 +490,7 @@ public class LineFeatureExtractor extends BasicFeatureExtractor {
 
             // Code component baseline
 
-            /*
+
             if (codeBaselineFeatureOn) {
 
                  // Is this token a bracket?
@@ -477,13 +513,30 @@ public class LineFeatureExtractor extends BasicFeatureExtractor {
 
                 // keyword contain
                 codeDetect.add(KEYWORD_CONTAIN, DetectCodeComponent.isThisKeyword(node.form) ? 1 : 0);
-            } */
+            }
+
         }
 
+
+
+
+        //embedding features
+        boolean sent2vec = false;
+        if(sent2vec) {
+            double[] sentenceEmbedding = param.getVector();
+            for (int i = 0; i < 100; i++) {
+                features.add(new FeatureNode(getFeatureIndex("EMBEDDING_" + i), sentenceEmbedding[i]));
+            }
+        }
+        else { // word2vec avg
+            for(int i=0; i<200; i++) {
+                features.add(new FeatureNode(getFeatureIndex("EMBEDDING_"+i), lineVector.doubleAt(i)/(double)(size)));
+            }
+        }
         for(Integer id : dependentRelationBag.elementSet()) {
             if(!featureNodeIndex.contains(id)) {
                 featureNodeIndex.add(id);
-                features.add(new FeatureNode(id, (double)dependentRelationBag.count(id)/(double)size));
+                features.add(new FeatureNode(id, (double)dependentRelationBag.count(id)/(double)(size)));
             }
 
         }
@@ -494,6 +547,7 @@ public class LineFeatureExtractor extends BasicFeatureExtractor {
             }
 
         }
+
 
      /*   for(Integer id : codeDetect.elementSet()) {
             if (!featureNodeIndex.contains(id)) {

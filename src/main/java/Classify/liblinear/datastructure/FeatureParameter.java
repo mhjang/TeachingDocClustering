@@ -31,6 +31,7 @@ public class FeatureParameter {
     private String prev_1_line;
     private String prev_2_line;
 
+    private double[] vector;
     public static boolean useSequentialFeature = true;
     public static boolean featureIndexReset = false;
 
@@ -60,6 +61,7 @@ public class FeatureParameter {
         private boolean excludeCode = false;
         private boolean excludeEqu = false;
         private boolean excludeMisc = false;
+        private double[] vector = null;
 
         private String line;
         private String prev_1_line;
@@ -85,6 +87,10 @@ public class FeatureParameter {
             return this;
         }
 
+        public Builder setVector(double[] vector) {
+            this.vector = vector;
+            return this;
+        }
         public Builder tokenLocation(FragmentIndex tokenFrag_) {
             this.tokenFrag = tokenFrag_;
             return this;
@@ -140,7 +146,7 @@ public class FeatureParameter {
         this.line = builder.line;
         this.prev_1_line = builder.prev_1_line;
         this.prev_2_line = builder.prev_2_line;
-
+        this.vector = builder.vector;
     }
 
     public boolean isApplyModel() {
@@ -178,6 +184,9 @@ public class FeatureParameter {
         return false;
     }
 
+    public double[] getVector() {
+        return vector;
+    }
     public String getCurrentLine() { return line; }
 
     public String getPrev_1_line() { return prev_1_line; }

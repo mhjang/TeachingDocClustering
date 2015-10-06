@@ -4,6 +4,7 @@ import Clustering.*;
 import Similarity.CosineSimilarity;
 
 import java.io.BufferedReader;
+import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
 import java.text.DecimalFormat;
@@ -17,9 +18,16 @@ public class KMeansClustering extends Clustering{
     ArrayList<String> topiclist;
     DocumentCollection dc;
     CentroidDocument[] centroids;
-    public KMeansClustering(ArrayList<String> topiclist, DocumentCollection dc) throws IOException {
+    public KMeansClustering(String topicDir, DocumentCollection dc) throws IOException {
         super(dc);
-        this.topiclist = topiclist;
+
+        BufferedReader br = new BufferedReader(new FileReader(new File(topicDir)));
+        topiclist = new ArrayList<String>();
+        String line = null;
+        while ((line = br.readLine()) != null) {
+            topiclist.add(line);
+        }
+
         this.dc = dc;
         centroids = initCentroid();
     }
@@ -125,7 +133,7 @@ public class KMeansClustering extends Clustering{
                 sum += e.getValue() * e.getValue();
             }
             for(Map.Entry<String, Double> e: topTFTerms) {
-                System.out.println(e.getKey() + " :" + df.format(e.getValue() / sum) + "");
+                System.out.print(e.getKey() + "(" + df.format(e.getValue() / sum) + ") ");
 
             }
 
@@ -267,9 +275,9 @@ public class KMeansClustering extends Clustering{
             }
 */
 
+        //    printCentroids(centroids);
 
         }
-   //     printCentroids(centroids);
 
         return clusterAssignments;
     }

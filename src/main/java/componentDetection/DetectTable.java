@@ -32,7 +32,7 @@ public class DetectTable {
 
     public DetectTable() {
         try {
-            String baseDir = "/Users/mhjang/Desktop/clearnlp/acl/training/";
+            String baseDir = "/Users/mhjang/Desktop/Research/TeachingDocClustering/dataset/training/combined/";
             tablePatternUnigram = HashMultiset.create();
             BufferedReader br = new BufferedReader(new FileReader(new File(baseDir + "stats/table.1gram")));
             String line;

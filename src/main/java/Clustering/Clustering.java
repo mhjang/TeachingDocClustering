@@ -49,19 +49,10 @@ public class Clustering {
         // parameter: whether to use Google N-gram
         TFIDFCalculator tfidf = new TFIDFCalculator(true);
         SVMClassifier svm = new SVMClassifier();
-        String baseDir = "/Users/mhjang/Desktop/clearnlp/acl/training/";
+   //     String baseDir = "/Users/mhjang/Desktop/clearnlp/acl/training/";
 
-    //    svm.runFiveFoldCrossValidation(baseDir, false, true, FeatureExtractor.LINE_BASED);
-        TableGenerator t = svm.getTableGenerator();
-   //     TableGenerator t= new TableGenerator();
-        System.out.println("Table size: " + t.getSize());
-        TFIDFCalculator.noiseRatio = 0.2;
-        tfidf.calulateTFIDFWithNoise(TFIDFCalculator.LOGTFIDF, "/Users/mhjang/Documents/teaching_documents/extracted/dataset/applydataset/goldstandard/", Tokenizer.UNIGRAM, false, t);
-   //     tfidf.calulateTFIDF(TFIDFCalculator.LOGTFIDF, "/Users/mhjang/Documents/teaching_documents/extracted/dataset/applydataset/annotation/", Tokenizer.UNIGRAM, false);
-
+        tfidf.calulateTFIDF(TFIDFCalculator.LOGTFIDF, "/Users/mhjang/Desktop/Research/TeachingDocClustering/dataset/experiments/gold_standard/output/", Tokenizer.UNIGRAM, false);
         DocumentCollection dc = tfidf.getDocumentCollection();
- //       DocumentCollection dc = tfidf.getDocumentCollection("/Users/mhjang/Documents/teaching_documents/extracted/stemmed/parsed/noise_removed", Tokenizer.TRIGRAM, false);
-
         System.out.println("Documents features ready");
         HashMap<String, Document> documentMap = dc.getDocumentSet();
         HashMap<String, Integer> termOccurrenceDic = dc.getglobalTermCountMap();
@@ -101,31 +92,11 @@ public class Clustering {
             clustering.documentFirstKTerms = firstKWords;
         */
 
-        //   String[] topics = {"list and array representation", "graph traverse", "sorting algorithm"};
-        // added this, because when topic names are long.. it's hard to recognize the cluster and the gold standard cluster name when parsing
-        // It's simpler if I use a separate label index by line
-        Integer clusterLabelIndex = 0;
-        HashMap<String, Integer> clusterLabelMap = new HashMap<String, Integer>();
-        // reading a topic file
-        BufferedReader br = new BufferedReader(new FileReader(new File("./goldstandard/topics_v2_stemmed")));
-        ArrayList<String> topiclist = new ArrayList<String>();
-        String line = null;
-        while ((line = br.readLine()) != null) {
-            topiclist.add(line);
-            clusterLabelMap.put(line, clusterLabelIndex++);
-        }
-//        clusterLabelMap.put("dummy", clusterLabelIndex);
-//        topiclist.add("dummy");
-   //     Clustering clustering = new Clustering(dc);
-  //      clustering.naiveAssignmentLazyUpdate(documentMap, topiclist, infrequentTermThreshold, clusteringThreshold);
 
-
-
-
-         KMeansClustering kmeans = new KMeansClustering(topiclist, dc);
-        HashMap<String, LinkedList<String>> clusters = kmeans.convertToTopicMap(kmeans.clusterRun(10, 0.05));
+         KMeansClustering kmeans = new KMeansClustering("./goldstandard/topics_v2_stemmed", dc);
+        HashMap<String, LinkedList<String>> clustersWithoutNoise = kmeans.convertToTopicMap(kmeans.clusterRun(10, 0.05));
      //  HashMap<String, LinkedList<String>> clusters = kmeans.convertToTopicMap(kmeans.clusterRunWithSignatureVector(10, 0.05, dc.constructSignatureVector(25)));
-        ClusteringFMeasure cfm = new ClusteringFMeasure(clusters, clusterLabelMap, topiclist, "./goldstandard/goldstandard_v2.csv", dc);
+        ClusteringFMeasure cfm = new ClusteringFMeasure(clustersWithoutNoise, "./goldstandard/topics_v2_stemmed", "./goldstandard/goldstandard_v2.csv", dc);
         System.out.println("Original");
 
      //   cfm.computeAccuracy();
@@ -134,10 +105,10 @@ public class Clustering {
         System.out.println();
 
 
-/*
+
         TFIDFCalculator tfidf2 = new TFIDFCalculator(true);
-        TFIDFCalculator.noiseRatio = 0.3;
-        tfidf2.calulateTFIDF(TFIDFCalculator.LOGTFIDF, "/Users/mhjang/Documents/teaching_documents/extracted/dataset/applydataset/output/", Tokenizer.UNIGRAM, false);
+   //     TFIDFCalculator.noiseRatio = 0.3;
+        tfidf2.calulateTFIDF(TFIDFCalculator.LOGTFIDF, "/Users/mhjang/Desktop/Research/TeachingDocClustering/dataset/experiments/gold_standard/annotation/", Tokenizer.UNIGRAM, false);
         DocumentCollection dc2 = tfidf2.getDocumentCollection();
         //       DocumentCollection dc = tfidf.getDocumentCollection("/Users/mhjang/Documents/teaching_documents/extracted/stemmed/parsed/noise_removed", Tokenizer.TRIGRAM, false);
 
@@ -148,65 +119,37 @@ public class Clustering {
 //        lm.run();
         lm2.selectHighTFTerms();
         Clustering clustering2 = new Clustering(dc2);
-        KMeansClustering kmeans2 = new KMeansClustering(topiclist, dc2);
-        HashMap<String, LinkedList<String>> clusters2 = kmeans2.convertToTopicMap(kmeans2.clusterRun(10, 0.05));
-  //      HashMap<String, LinkedList<String>> clusters2 = kmeans2.convertToTopicMap(kmeans2.clusterRunWithSignatureVector(10, 0.05, dc2.constructSignatureVector(25)));
+        KMeansClustering kmeans2 = new KMeansClustering("./goldstandard/topics_v2_stemmed", dc2);
+        HashMap<String, LinkedList<String>> clustersOriginal = kmeans2.convertToTopicMap(kmeans2.clusterRun(10, 0.05));
 
-        ClusteringFMeasure cfm2 = new ClusteringFMeasure(clusters2, clusterLabelMap, topiclist, "./goldstandard/goldstandard_v2.csv", dc2);
-        System.out.println("Original" );
+        ClusteringFMeasure cfm2 = new ClusteringFMeasure(clustersOriginal, "./goldstandard/topics_v2_stemmed", "./goldstandard/goldstandard_v2.csv", dc2);
+        System.out.println("Removal" );
         cfm2.compAccuracyOnlyItemsInGold();
   //     cfm2.computeAccuracy();
-   //     cfm2.errorAnalysis(clusters, clusters2);
-   //    kmeans2.printCluster(clusters, topiclist);
-   //     kmeans2.printCluster(clusters2, topiclist);
 
-    //    cfm2.errorAnalysis(clusters, clusters2);
-   //     kmeans2.printCluster(clusters, topiclist);
-  //      kmeans2.printCluster(clusters2, topiclist);
-        //      HashMap<String, LinkedList<String>> clusters = kmeans.convertToTopicMap(kmeans.clusterRunWithSignatureVector(10, 0.05, dc.constructSignatureVector(25)));
-        //       cfm.computeAccuracy();
+    //    cfm2.errorAnalysis(clustersOriginal, clustersWithoutNoise);
 
 
-        //       kmeans.printCluster(clusters, topiclist);
-
-
-
-  /*          HashMap<String, LinkedList<String>> clusters = clustering.naiveAssignmentLazyUpdate(documentMap, topiclist, infrequentTermThreshold, clusteringThreshold);
-            //  HashMap<String, LinkedList<String>> clusters = clustering.naiveAssignmentLazyUpdateDuplicate(documentMap, topiclist, 0, 0.05);
-
-            ClusteringFMeasure cfm = new ClusteringFMeasure(clusters, clusterLabelMap, topiclist, "./goldstandard/goldstandard_v2.csv", dc);
-
-            cfm.computeAccuracy(); */
-//            HashMap<String, LinkedList<String>> clustersInGold = cfm.compAccuracyOnlyItemsInGold();
-//            clustering.printCluster(clustersInGold, topiclist);
-
-       //     cfm.analyzeCodeRemovedPerCluster(topiclist);
-
-       //   HashMap<String, LinkedList<String>> clusters= clustering.naiveAssignmentFirstRandomAssign(documentMap, topiclist);
-
-
-/*
         TFIDFCalculator tfidf3 = new TFIDFCalculator(true);
-        tfidf3.calulateTFIDF(TFIDFCalculator.LOGTFIDF, "/Users/mhjang/Documents/teaching_documents/extracted/dataset/applydataset/goldstandard_noiseremoved/", Tokenizer.UNIGRAM, false);
-        DocumentCollection dc3 = tfidf3.getDocumentCollection();
+        //     TFIDFCalculator.noiseRatio = 0.3;
+        tfidf2.calulateTFIDF(TFIDFCalculator.LOGTFIDF, "/Users/mhjang/Desktop/Research/TeachingDocClustering/dataset/experiments/gold_standard/manually_processed_goldstandard/", Tokenizer.UNIGRAM, false);
+        DocumentCollection dc3 = tfidf2.getDocumentCollection();
         //       DocumentCollection dc = tfidf.getDocumentCollection("/Users/mhjang/Documents/teaching_documents/extracted/stemmed/parsed/noise_removed", Tokenizer.TRIGRAM, false);
 
-        documentMap = dc3.getDocumentSet();
-        termOccurrenceDic = dc3.getglobalTermCountMap();
+        documentMap = dc2.getDocumentSet();
+        termOccurrenceDic = dc2.getglobalTermCountMap();
 
-        LanguageModeling lm3 = new LanguageModeling(dc3, 30, 0.7, 0.2);
+        LanguageModeling lm3 = new LanguageModeling(dc2, 30, 0.7, 0.2);
 //        lm.run();
-        lm3.selectHighTFTerms();
-        Clustering clustering3 = new Clustering(dc3);
-        KMeansClustering kmeans3 = new KMeansClustering(topiclist, dc3);
-        HashMap<String, LinkedList<String>> clusters3 = kmeans3.convertToTopicMap(kmeans3.clusterRun(10, 0.05));
-        //      HashMap<String, LinkedList<String>> clusters2 = kmeans2.convertToTopicMap(kmeans2.clusterRunWithSignatureVector(10, 0.05, dc2.constructSignatureVector(25)));
+        lm2.selectHighTFTerms();
+        Clustering clustering3 = new Clustering(dc2);
+        KMeansClustering kmeans3 = new KMeansClustering("./goldstandard/topics_v2_stemmed", dc2);
+        HashMap<String, LinkedList<String>> clustersManual= kmeans2.convertToTopicMap(kmeans2.clusterRun(10, 0.05));
 
-        ClusteringFMeasure cfm3 = new ClusteringFMeasure(clusters3, clusterLabelMap, topiclist, "./goldstandard/goldstandard_v2.csv", dc3);
-        System.out.println("After Noise Algorithm removal ");
-        //      cfm2.compAccuracyOnlyItemsInGold();
-        cfm3.computeAccuracy();
-        */
+        ClusteringFMeasure cfm3 = new ClusteringFMeasure(clustersOriginal, "./goldstandard/topics_v2_stemmed", "./goldstandard/goldstandard_v2.csv", dc2);
+        System.out.println("Removal" );
+        cfm3.compAccuracyOnlyItemsInGold();
+
 
         }
   //  }

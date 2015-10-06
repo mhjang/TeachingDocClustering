@@ -76,10 +76,12 @@ public class CentroidDocument extends Document {
        //     System.out.print(vectorscore + "\t");
         }
         // test print
-        for(int i=0; i<((vecLen>100)?100:vecLen); i++) {
+   /*     for(int i=0; i<((vecLen>100)?100:vecLen); i++) {
             String label = labelList[i];
-     //       System.out.print(this.getTFIDF(label) + " ");
+            System.out.print(label + "("+ this.getTFIDF(label) + ") ");
         }
+        System.out.println();
+        */
     //    selectTopTFIDFFeatures(20);
     }
 
