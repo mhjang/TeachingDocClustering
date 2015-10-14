@@ -9,7 +9,7 @@ public class WordVector {
         this.v = d;
     }
     public WordVector() {
-        v = new double[200];
+        v = new double[100];
     }
     public double doubleAt(int i) {
         if(v == null) return 0.0;

@@ -119,6 +119,7 @@ public class TagConstant {
     }
 
     public static int getComponentID(String tag) {
+        if(tag == null) return TEXT;
         if(tag.equals(tableTag)) return BEGINTABLE;
         else if(tag.equals(codeTag)) return BEGINCODE;
         else if(tag.equals(equTag)) return BEGINEQU;

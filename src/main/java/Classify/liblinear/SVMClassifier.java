@@ -6,7 +6,6 @@ import Classify.liblinear.datastructure.FeatureParameter;
 import Classify.noisegenerator.TableGenerator;
 import com.google.common.collect.HashMultiset;
 import com.google.common.collect.Multiset;
-import componentDetection.DetectTable;
 import de.bwaldvogel.liblinear.*;
 import simple.io.myungha.DirectoryReader;
 
@@ -47,7 +46,7 @@ public class SVMClassifier {
         SVMClassifier svm = new SVMClassifier();
 
         int featureUnit = FeatureExtractor.LINE_BASED;
-        String baseDir = ExperimentConstant.DATASET_training;
+        String baseDir = ExperimentConstant.DATASET_trainingcombined;
 
   //    routine 1: do five fold cross validation with annotation to evaluate the accuracy
    //     boolean useAnnotationForPreviousNode = true;
@@ -58,13 +57,13 @@ public class SVMClassifier {
         svm.firstModel = "combined_embedding_1st";
         svm.secondModel = "combined_embedding_final";
 
-   //      svm.learnFirstModel(baseDir);
-   //     svm.learnSecondModel(baseDir);
+         svm.learnFirstModel(baseDir);
+  //      svm.learnSecondModel(baseDir);
 
         boolean isFirstModelEvaluation = false; // in ohter words, do we use sequential features?
         boolean useAnnotation = false; // true when evaluating  "acl_second_annotation_model", false when evaluating "acl_second_prediction_model"
 
-    //    svm.runFiveFoldCrossValidation(baseDir,isFirstModelEvaluation, useAnnotation, FeatureExtractor.LINE_BASED);
+ //       svm.runFiveFoldCrossValidation(baseDir,isFirstModelEvaluation, useAnnotation, FeatureExtractor.LINE_BASED);
 
 
    /*    TableGenerator t = svm.getTableGenerator();
@@ -73,7 +72,7 @@ public class SVMClassifier {
             t.generateTable();
         }
 */
-        String applyDir = ExperimentConstant.DATASET_goldstandard;
+        String applyDir = ExperimentConstant.DATASET_acl;
         // routine 3: apply the learned model to generate the noise-free version of documents
         svm.applyModelToDocuments(applyDir);
 
@@ -209,6 +208,7 @@ public class SVMClassifier {
             double[] target = new double[problem.l];
             // the predicted results are saved at "target" array
             Linear.crossValidation(problem, param, nr_fold, target);
+
             // evaluate it by comparing target and ef.answers
             evaluate(target, ef.getTrainingAnswers(), ef.getOriginalText(), true);
         } catch (Exception e) {

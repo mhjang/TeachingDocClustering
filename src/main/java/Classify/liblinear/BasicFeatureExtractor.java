@@ -22,8 +22,8 @@ import java.util.LinkedList;
 public abstract class BasicFeatureExtractor {
 
     static String initiatedTag = null;
-    static String[] startTags = {TagConstant.codeTag, TagConstant.tableTag, TagConstant.equTag, TagConstant.miscTag};
-    static String[] closetags = {TagConstant.codeCloseTag, TagConstant.tableCloseTag, TagConstant.equCloseTag, TagConstant.miscCloseTag};
+    public static String[] startTags = {TagConstant.codeTag, TagConstant.tableTag, TagConstant.equTag, TagConstant.miscTag};
+    public static String[] closetags = {TagConstant.codeCloseTag, TagConstant.tableCloseTag, TagConstant.equCloseTag, TagConstant.miscCloseTag};
 
     static HashMap<String, Integer> featureMap = new HashMap<String, Integer>();
     static HashMap<Integer, String> featureinverseMap = new HashMap<Integer, String>();

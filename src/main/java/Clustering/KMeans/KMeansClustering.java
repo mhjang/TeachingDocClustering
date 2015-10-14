@@ -18,6 +18,13 @@ public class KMeansClustering extends Clustering{
     ArrayList<String> topiclist;
     DocumentCollection dc;
     CentroidDocument[] centroids;
+
+    /**
+     * Seeded KMeans Clustering
+     * @param topicDir
+     * @param dc
+     * @throws IOException
+     */
     public KMeansClustering(String topicDir, DocumentCollection dc) throws IOException {
         super(dc);
 
@@ -31,6 +38,8 @@ public class KMeansClustering extends Clustering{
         this.dc = dc;
         centroids = initCentroid();
     }
+
+
 
 
 

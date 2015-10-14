@@ -12,12 +12,12 @@ public class VectorLookUp {
     HashMap<String, WordVector> lookup = new HashMap<String, WordVector>();
     public VectorLookUp() {
         try {
-            SimpleFileReader sr = new SimpleFileReader("/Users/mhjang/Documents/workspace/dl4j/vec.txt");
+            SimpleFileReader sr = new SimpleFileReader("/Users/mhjang/Documents/workspace/NontextCompDetection/pdfcorpus-utf8.txt.vec");
             while(sr.hasMoreLines()) {
                 String line = sr.readLine();
                 String[] tokens = line.split(" ");
                 String word = tokens[0];
-                double[] vector = new double[200];
+                double[] vector = new double[100];
                 for(int i=0; i<tokens.length - 1; i++) {
                     vector[i] = Double.parseDouble(tokens[i+1]);
                 }
