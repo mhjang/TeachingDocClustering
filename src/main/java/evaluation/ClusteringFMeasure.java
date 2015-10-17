@@ -241,7 +241,7 @@ public class ClusteringFMeasure {
      *
      */
     public HashMap<String, LinkedList<String>> compAccuracyOnlyItemsInGold() {
-        System.out.println("Accuracy in Gold Standard");
+    //    System.out.println("Accuracy in Gold Standard");
         for(String clusterName : topiclist) {
             LinkedList<String> cluster = clusters.get(clusterName);
             LinkedList<String> newCluster = new LinkedList<String>();
@@ -295,7 +295,7 @@ public class ClusteringFMeasure {
             avgRecall += recall;
 
             fMeasure = (2 * precision * recall) / (precision + recall);
-            System.out.println(clusterName + "\t" + precision + "\t" + recall + "\t" + fMeasure);
+    //        System.out.println(clusterName + "\t" + precision + "\t" + recall + "\t" + fMeasure);
         }
         double length = (double)topiclist.size();
         avgPrecision /= length;

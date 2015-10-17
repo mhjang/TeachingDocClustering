@@ -1,6 +1,6 @@
 package evaluation;
 
-import Classify.liblinear.datastructure.ExperimentConstant;
+import Classify.liblinear.datastructure.DatasetDir;
 import Clustering.Document;
 import Similarity.CosineSimilarity;
 import TeachingDocParser.Tokenizer;
@@ -22,7 +22,7 @@ import java.util.HashMap;
 
 public class RegressionAnalysis {
     public static void main(String[] args) {
-        String dir = ExperimentConstant.DATASET_dsa + "/annotation";
+        String dir = DatasetDir.CLUSTER_dsa + "/annotation";
         TFIDFCalculator tfidf = null;
         try {
             tfidf = new TFIDFCalculator(true);

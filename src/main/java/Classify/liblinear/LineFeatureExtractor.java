@@ -54,11 +54,16 @@ public class LineFeatureExtractor extends BasicFeatureExtractor {
     VectorLookUp vlu;
 
     SimpleFileWriter nnInput;
+
+    int[] vectorNullCount;
+    int[] vectorTokenCount;
     public LineFeatureExtractor(boolean isLearningMode) {
         this.isLearningMode = isLearningMode;
         tableDetecter = new DetectTable();
     //    tableGenerator = new TableGenerator();
         vlu = new VectorLookUp();
+        vectorNullCount = new int[5];
+        vectorTokenCount = new int[5];
         try {
             bw = new BufferedWriter(new FileWriter(new File("test.dat")));
             nnInput = new SimpleFileWriter("nn_input.txt");
@@ -366,8 +371,8 @@ public class LineFeatureExtractor extends BasicFeatureExtractor {
 
             }
 
-            nnInput.close();
-            System.out.println("NNinput successfully written");
+        //    nnInput.close();
+        //    System.out.println("NNinput successfully written");
     } catch (Exception e) {
             e.printStackTrace();
         }
@@ -375,6 +380,13 @@ public class LineFeatureExtractor extends BasicFeatureExtractor {
         // all the stats for feature analysis
           return allFeatures;
 
+    }
+
+    // how much of the tokens were unseen?
+    public void printEmbeddingNullRatio() {
+        for(int i=0; i<5; i++) {
+            System.out.println(TagConstant.getTagLabel(i) + "\t" + (double)vectorNullCount[i]/(double)vectorTokenCount[i]);
+        }
     }
 
     // I want to skip this line if it only contains tag without any main text because parsing tree doesn't exist for this line
@@ -474,8 +486,12 @@ public class LineFeatureExtractor extends BasicFeatureExtractor {
             if(wordVector != null) {
                 lineVector.addVector(wordVector);
             }
+            if(wordVector == null)
+                vectorNullCount[TagConstant.getComponentID(param.getTagType())]++;
+            vectorTokenCount[TagConstant.getComponentID(param.getTagType())]++;
 
-            List<DEPArc> dependents = node.getDependents();
+
+                List<DEPArc> dependents = node.getDependents();
             // check feature index duplicate
             HashSet<Integer> featureIndex = new HashSet<Integer>();
 
@@ -528,17 +544,19 @@ public class LineFeatureExtractor extends BasicFeatureExtractor {
 
         //embedding features
         boolean sent2vec = false;
+
         if(sent2vec) {
             double[] sentenceEmbedding = param.getVector();
-            for (int i = 0; i < 100; i++) {
+            for (int i = 0; i < 200; i++) {
                 features.add(new FeatureNode(getFeatureIndex("EMBEDDING_" + i), sentenceEmbedding[i]));
             }
         }
         else { // word2vec avg
-            for(int i=0; i<100; i++) {
+            for(int i=0; i<200; i++) {
                 features.add(new FeatureNode(getFeatureIndex("EMBEDDING_"+i), lineVector.doubleAt(i)/(double)(size)));
             }
         }
+
         for(Integer id : dependentRelationBag.elementSet()) {
             if(!featureNodeIndex.contains(id)) {
                 featureNodeIndex.add(id);

@@ -15,6 +15,7 @@ import java.util.*;
  * @author Myung-ha Jang (mhjang@cs.umass.edu)
  */
 public class KMeansClustering extends Clustering{
+    ArrayList<String> seedlist;
     ArrayList<String> topiclist;
     DocumentCollection dc;
     CentroidDocument[] centroids;
@@ -23,18 +24,37 @@ public class KMeansClustering extends Clustering{
      * Seeded KMeans Clustering
      * @param topicDir
      * @param dc
+     * @param isSeedWords: Does the given topicDir contain the seeding keywords, or the name of the seed files? If false, read the files
      * @throws IOException
      */
-    public KMeansClustering(String topicDir, DocumentCollection dc) throws IOException {
+    public KMeansClustering(String topicDir, boolean isSeedWords, DocumentCollection dc) throws IOException {
         super(dc);
-
         BufferedReader br = new BufferedReader(new FileReader(new File(topicDir)));
+        seedlist = new ArrayList<String>();
         topiclist = new ArrayList<String>();
         String line = null;
-        while ((line = br.readLine()) != null) {
-            topiclist.add(line);
+        if(isSeedWords) {
+            while ((line = br.readLine()) != null) {
+                seedlist.add(line);
+            }
+            topiclist = seedlist;
         }
 
+
+        // the line contains the file name not the keywords
+        else {
+            while ((line = br.readLine()) != null) {
+          //      System.out.println(line);
+                Document d = dc.getDocument(line.toLowerCase());
+                topiclist.add(line);
+                StringBuilder sb = new StringBuilder();
+                for (String w : d.getUnigrams()) {
+                    sb.append(w + " ");
+                }
+                seedlist.add(sb.toString());
+            }
+
+        }
         this.dc = dc;
         centroids = initCentroid();
     }
@@ -70,11 +90,11 @@ public class KMeansClustering extends Clustering{
      * @throws java.io.IOException
      */
     public CentroidDocument[] initCentroid() throws IOException {
-        AbstractMap.SimpleEntry<HashMap<String, LinkedList<String>>, HashMap<String, Document>> entry = (AbstractMap.SimpleEntry) convertTopicToDocument(topiclist);
+        AbstractMap.SimpleEntry<HashMap<String, LinkedList<String>>, HashMap<String, Document>> entry = (AbstractMap.SimpleEntry) convertTopicToDocument(seedlist);
         CentroidDocument[] centroids = new CentroidDocument[(entry.getValue().size())];
         HashMap<String, Document> topicDocMap = entry.getValue();
         int i=0;
-        for(String topic : topiclist) {
+        for(String topic : seedlist) {
             Document d = topicDocMap.get(topic);
             CentroidDocument cd = new CentroidDocument(d);
             centroids[i++] = cd;
@@ -210,7 +230,7 @@ public class KMeansClustering extends Clustering{
             }
 
   /*          for(int i=0; i< centroids.length; i++) {
-                System.out.print(topiclist.get(i) + ": \t");
+                System.out.print(seedlist.get(i) + ": \t");
                 LinkedList<Document> cluster = clusterAssignments.get(i);
                 for (Document d : cluster) {
                     System.out.print(d.getName() + "\t");
@@ -229,7 +249,6 @@ public class KMeansClustering extends Clustering{
     public  LinkedList<LinkedList<Document>> clusterRun(int maxIteration, double rssThreshold) throws IOException {
   //      CentroidDocument[] centroids = initCentroidACL();
         double curRSS = 0.0, prevRSS = 0.0;
-        int[] aa = new int[5];
         LinkedList<LinkedList<Document>> clusterAssignments = null;
         Collection<Document> collection =  dc.getDocumentSet().values();
         for (int k = 0; k < maxIteration; k++) {

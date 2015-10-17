@@ -1,7 +1,7 @@
 package Classify.liblinear;
 
 import Classify.TagConstant;
-import Classify.liblinear.datastructure.ExperimentConstant;
+import Classify.liblinear.datastructure.DatasetDir;
 import Classify.liblinear.datastructure.FeatureParameter;
 import Classify.noisegenerator.TableGenerator;
 import com.google.common.collect.HashMultiset;
@@ -46,7 +46,7 @@ public class SVMClassifier {
         SVMClassifier svm = new SVMClassifier();
 
         int featureUnit = FeatureExtractor.LINE_BASED;
-        String baseDir = ExperimentConstant.DATASET_trainingcombined;
+        String baseDir = DatasetDir.CLASSIFY_combined;
 
   //    routine 1: do five fold cross validation with annotation to evaluate the accuracy
    //     boolean useAnnotationForPreviousNode = true;
@@ -57,13 +57,13 @@ public class SVMClassifier {
         svm.firstModel = "combined_embedding_1st";
         svm.secondModel = "combined_embedding_final";
 
-         svm.learnFirstModel(baseDir);
-  //      svm.learnSecondModel(baseDir);
+        svm.learnFirstModel(baseDir);
+        svm.learnSecondModel(baseDir);
 
         boolean isFirstModelEvaluation = false; // in ohter words, do we use sequential features?
         boolean useAnnotation = false; // true when evaluating  "acl_second_annotation_model", false when evaluating "acl_second_prediction_model"
 
- //       svm.runFiveFoldCrossValidation(baseDir,isFirstModelEvaluation, useAnnotation, FeatureExtractor.LINE_BASED);
+        svm.runFiveFoldCrossValidation(baseDir,isFirstModelEvaluation, useAnnotation, FeatureExtractor.LINE_BASED);
 
 
    /*    TableGenerator t = svm.getTableGenerator();
@@ -72,9 +72,9 @@ public class SVMClassifier {
             t.generateTable();
         }
 */
-        String applyDir = ExperimentConstant.DATASET_acl;
+ //       String applyDir = DatasetDir.CLUSTER_dsa;
         // routine 3: apply the learned model to generate the noise-free version of documents
-        svm.applyModelToDocuments(applyDir);
+  //      svm.applyModelToDocuments(applyDir);
 
 
     }
@@ -125,8 +125,11 @@ public class SVMClassifier {
             System.out.println("# of training examples: " + problem.l);
 
             ef.generateFeatureIndexFile();
+            ef.extractor.printEmbeddingNullRatio();
     //        writeTrainingFile(allFeaturesArray);
     //        DetectTable.buildStatistics();
+
+
             return problem;
         } catch (Exception e) {
             e.printStackTrace();
@@ -345,7 +348,7 @@ public class SVMClassifier {
             if (prediction == truth) {
                 correctItemSet.add(prediction);
             } else {
-                System.out.println("Wrong (" + TagConstant.getTagLabel(truth)+ "-> " + TagConstant.getTagLabel(prediction) +"= " + lines.get(i));
+       //         System.out.println("Wrong (" + TagConstant.getTagLabel(truth)+ "-> " + TagConstant.getTagLabel(prediction) +"= " + lines.get(i));
             }
         }
 
@@ -357,10 +360,12 @@ public class SVMClassifier {
             truthTotal += truthSet.count(label);
 
         }
+        /*
         System.out.println("truth data ratio");
         for (Integer label: truthSet.elementSet()) {
             System.out.println(TagConstant.getTagLabel(label) + "\t" + (double) (truthSet.count(label) / (double) truthTotal));
         }
+        */
     }
 
 

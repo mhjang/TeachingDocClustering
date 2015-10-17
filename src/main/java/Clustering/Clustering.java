@@ -27,13 +27,6 @@ public class Clustering {
     HashMap<String, Document> clusterFeatureMap;
 
     public static void main(String[] args) throws IOException {
-        // redirecting a system output to a file
-        PrintStream console = System.out;
-        File file = new File("noise_20.txt");
-        FileOutputStream fos = new FileOutputStream(file);
-        PrintStream ps = new PrintStream(fos);
-  //      System.setOut(ps);
-
         /***
          * Setting the parameters
          */
@@ -51,12 +44,11 @@ public class Clustering {
         SVMClassifier svm = new SVMClassifier();
    //     String baseDir = "/Users/mhjang/Desktop/clearnlp/acl/training/";
 
-        tfidf.calulateTFIDF(TFIDFCalculator.LOGTFIDF, "/Users/mhjang/Desktop/Research/TeachingDocClustering/dataset/experiments/gold_standard/output/", Tokenizer.UNIGRAM, false);
+        tfidf.calulateTFIDF(TFIDFCalculator.LOGTFIDF, "/Users/mhjang/Desktop/Research/TeachingDocClustering/dataset/experiments/gold_standard/annotation/", Tokenizer.UNIGRAM, false);
         DocumentCollection dc = tfidf.getDocumentCollection();
         System.out.println("Documents features ready");
         HashMap<String, Document> documentMap = dc.getDocumentSet();
         HashMap<String, Integer> termOccurrenceDic = dc.getglobalTermCountMap();
-
 
         /**
          * Applying language modeling
@@ -64,10 +56,10 @@ public class Clustering {
          * by default, k = 50
          * NOTE that this method NULLIFIES bigrams and trigrams.
          */
-        LanguageModeling lm = new LanguageModeling(dc, 30, 0.7, 0.2);
-//        lm.run();
-        lm.selectHighTFTerms();
-//      lm.TFIDFBaselineRun();
+        LanguageModeling lm = new LanguageModeling(dc, 0.7, 0.2);
+   //     lm.run();
+  //      lm.selectHighTFTerms();
+        lm.TFIDFBaselineRun(5);
 
 
         /**
@@ -93,19 +85,17 @@ public class Clustering {
         */
 
 
-         KMeansClustering kmeans = new KMeansClustering("./goldstandard/topics_v2_stemmed", dc);
+        KMeansClustering kmeans = new KMeansClustering("./goldstandard/dsa_docseed", false, dc);
         HashMap<String, LinkedList<String>> clustersWithoutNoise = kmeans.convertToTopicMap(kmeans.clusterRun(10, 0.05));
      //  HashMap<String, LinkedList<String>> clusters = kmeans.convertToTopicMap(kmeans.clusterRunWithSignatureVector(10, 0.05, dc.constructSignatureVector(25)));
-        ClusteringFMeasure cfm = new ClusteringFMeasure(clustersWithoutNoise, "./goldstandard/topics_v2_stemmed", "./goldstandard/goldstandard_v2.csv", dc);
+        ClusteringFMeasure cfm = new ClusteringFMeasure(clustersWithoutNoise, "./goldstandard/dsa_docseed", "./goldstandard/goldstandard_v2.csv", dc);
         System.out.println("Original");
 
-     //   cfm.computeAccuracy();
+     // cfm.computeAccuracy();
         cfm.compAccuracyOnlyItemsInGold();
-        System.out.println();
-        System.out.println();
 
 
-
+/*
         TFIDFCalculator tfidf2 = new TFIDFCalculator(true);
    //     TFIDFCalculator.noiseRatio = 0.3;
         tfidf2.calulateTFIDF(TFIDFCalculator.LOGTFIDF, "/Users/mhjang/Desktop/Research/TeachingDocClustering/dataset/experiments/gold_standard/annotation/", Tokenizer.UNIGRAM, false);
@@ -118,6 +108,7 @@ public class Clustering {
         LanguageModeling lm2 = new LanguageModeling(dc2, 30, 0.7, 0.2);
 //        lm.run();
         lm2.selectHighTFTerms();
+
         Clustering clustering2 = new Clustering(dc2);
         KMeansClustering kmeans2 = new KMeansClustering("./goldstandard/topics_v2_stemmed", dc2);
         HashMap<String, LinkedList<String>> clustersOriginal = kmeans2.convertToTopicMap(kmeans2.clusterRun(10, 0.05));
@@ -150,8 +141,9 @@ public class Clustering {
         System.out.println("Removal" );
         cfm3.compAccuracyOnlyItemsInGold();
 
-
+*/
         }
+
   //  }
 
 
@@ -508,7 +500,7 @@ public class Clustering {
         for(String t : topics) {
             clusters.put(t, new LinkedList<String>());
         }
-        clusters.put(DUMMY, new LinkedList<String>());
+    //    clusters.put(DUMMY, new LinkedList<String>());
         return clusters;
     }
 }

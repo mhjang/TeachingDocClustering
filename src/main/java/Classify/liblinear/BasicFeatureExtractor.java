@@ -105,6 +105,7 @@ public abstract class BasicFeatureExtractor {
     }
 
 
+    public void printEmbeddingNullRatio() {}
     public HashMap<Integer, String> getFeatureInverseDictionary() {
         return featureinverseMap;
     }

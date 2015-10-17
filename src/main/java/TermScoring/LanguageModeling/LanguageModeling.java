@@ -22,17 +22,16 @@ public class LanguageModeling {
     DocumentCollection documentCollection;
     int termWindow = 7;
     int k = 30;
-    public LanguageModeling(DocumentCollection dc, int topK, double alpha, double beta) throws IOException {
-        ng = new NGramReader();
+    public LanguageModeling(DocumentCollection dc, double alpha, double beta) throws IOException {
+  //      ng = new NGramReader();
         this.documentCollection = dc;
-        this.k = topK;
         this.unigramModelWeight = alpha;
         this.bigramModelWeight = beta;
         this.trigramModelWeight = 1-(alpha + beta);
     }
 
     public LanguageModeling(DocumentCollection dc) throws IOException {
-        ng = new NGramReader();
+ //       ng = new NGramReader();
         this.documentCollection = dc;
 
     }
@@ -272,15 +271,16 @@ public class LanguageModeling {
      * To conclude that language modeling extracts better terms (in terms of clustering accuracy)
      * this sets top K terms sorted by TFIDF score.
      */
-    public void TFIDFBaselineRun() {
+    public void TFIDFBaselineRun(int k_) {
         HashMap<String, Document> docSet = documentCollection.getDocumentSet();
+        this.k = k_;
         for (String docName : docSet.keySet()) {
             LinkedList<String> newUnigrams = new LinkedList<String>();
             Document doc = docSet.get(docName);
-            System.out.println(doc.getName());
+       //     System.out.println(doc.getName());
             LinkedList<Map.Entry<String, Double>> entryList = doc.getTopTermsTFIDF(k);
             for (Map.Entry<String, Double> e : entryList) {
-                System.out.println(e.getKey() + "\t" + e.getValue());
+      //          System.out.println(e.getKey() + "\t" + e.getValue());
                 newUnigrams.add(e.getKey());
             }
             doc.setUnigrams(newUnigrams);

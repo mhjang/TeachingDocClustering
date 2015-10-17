@@ -2,14 +2,11 @@ package Classify.Baseline;
 
 import Classify.TagConstant;
 import Classify.liblinear.BasicFeatureExtractor;
-import Classify.liblinear.datastructure.ExperimentConstant;
-import com.google.common.collect.HashMultiset;
-import com.google.common.collect.Multiset;
+import Classify.liblinear.datastructure.DatasetDir;
 import simple.io.myungha.DirectoryReader;
 import simple.io.myungha.SimpleFileReader;
 
 import java.util.ArrayList;
-import java.util.LinkedList;
 import java.util.Random;
 
 /**
@@ -18,7 +15,7 @@ import java.util.Random;
 public class RandomBaseline {
 
     public static void main(String[] args) {
-        String baseDir = ExperimentConstant.DATASET_trainingacl;
+        String baseDir = DatasetDir.CLASSIFY_acl;
         RandomRatio ratio = new ACLRatio();
         DirectoryReader dr = new DirectoryReader(baseDir);
         ArrayList<String> data = dr.getFileNameList();

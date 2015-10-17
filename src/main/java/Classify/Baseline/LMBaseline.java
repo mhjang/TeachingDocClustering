@@ -2,9 +2,9 @@ package Classify.Baseline;
 
 import Classify.TagConstant;
 import Classify.liblinear.BasicFeatureExtractor;
-import Classify.liblinear.datastructure.ExperimentConstant;
-import TeachingDocParser.Stemmer;
+import Classify.liblinear.datastructure.DatasetDir;
 import TeachingDocParser.StopWordRemover;
+import org.lemurproject.galago.core.parse.stem.KrovetzStemmer;
 import simple.io.myungha.DirectoryReader;
 import simple.io.myungha.SimpleFileReader;
 
@@ -23,7 +23,7 @@ public class LMBaseline {
     private LanguageModel collectionModel;
 
     StopWordRemover stopWordRemover;
-    Stemmer stemmer;
+    KrovetzStemmer stemmer;
 
 
     int[] componentCorrect = new int[5];
@@ -42,12 +42,12 @@ public class LMBaseline {
 
     public void evaluateFiveFold() {
         stopWordRemover = new StopWordRemover();
-        stemmer = new Stemmer();
+        stemmer = new KrovetzStemmer();
 
         LanguageModel.lambda = 1.0;
 
         // construct five-fold
-        String trainingDir = ExperimentConstant.DATASET_training5fold_acl;
+        String trainingDir = DatasetDir.DATASET_training5fold_acl;
         for(int i=1; i<=5; i++) {
             textModel = new LanguageModel();
             tableModel = new LanguageModel();
@@ -84,10 +84,10 @@ public class LMBaseline {
         for(int k=1; k<=10; k++) {
             LanguageModel.lambda = 0.1 * k;
             stopWordRemover = new StopWordRemover();
-            stemmer = new Stemmer();
+            stemmer = new KrovetzStemmer();
 
             // construct five-fold
-            String trainingDir = ExperimentConstant.DATASET_training5fold_combined;
+            String trainingDir = DatasetDir.CLASSIFY_training5fold_combined;
             for (int i = 1; i <= 5; i++) {
                 textModel = new LanguageModel();
                 tableModel = new LanguageModel();
@@ -142,7 +142,7 @@ public class LMBaseline {
         String[] words = stopWordRemover.removeStopWords(rawwords);
 
         for(String word : words) {
-            String w = stemmer.stemString(word);
+            String w = stemmer.stem(word);
             compProb[TagConstant.BEGINTABLE] += Math.log10(models[TagConstant.BEGINTABLE].getProbability(w));
             compProb[TagConstant.BEGINCODE] += Math.log10(models[TagConstant.BEGINCODE].getProbability(w));
             compProb[TagConstant.BEGINMISC] += Math.log10(models[TagConstant.BEGINMISC].getProbability(w));
@@ -178,7 +178,7 @@ public class LMBaseline {
             for (String filename : data) {
                 initiatedTag = null;
                 if (filename.contains(".DS_Store")) continue;
-                SimpleFileReader freader = new SimpleFileReader(ExperimentConstant.DATASET_training5fold_combined + "/annotation/" + filename);
+                SimpleFileReader freader = new SimpleFileReader(DatasetDir.CLASSIFY_training5fold_combined + "/annotation/" + filename);
 
                 ArrayList<String> annotatedLines = new ArrayList<String>();
                 String l = "";
@@ -269,7 +269,7 @@ public class LMBaseline {
             for (String filename : data) {
                 initiatedTag = null;
                 if (filename.contains(".DS_Store")) continue;
-                SimpleFileReader freader = new SimpleFileReader(ExperimentConstant.DATASET_training5fold_combined + "/annotation/" + filename);
+                SimpleFileReader freader = new SimpleFileReader(DatasetDir.CLASSIFY_training5fold_combined + "/annotation/" + filename);
 
                 ArrayList<String> annotatedLines = new ArrayList<String>();
                 String l = "";

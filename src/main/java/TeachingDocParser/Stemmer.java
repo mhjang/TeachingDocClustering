@@ -71,13 +71,15 @@ public class Stemmer {
         while(st.hasMoreTokens()) {
             String token = st.nextToken();
             String stem = stemmer.stem(token);
-            sb.append(stem);
+            sb.append(stem + " ");
      //       System.out.println(token + "->" + stem);
         }
-   //     sb.append("\n");
+        sb.append("\n");
    //     System.out.println();
         return sb.toString();
     }
+
+
 
     public void stemOneFileOutput(String path) {
         try {

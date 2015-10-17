@@ -44,7 +44,7 @@ public class ACLClustering {
          * by default, k = 50
          * NOTE that this method NULLIFIES bigrams and trigrams.
          */
-        LanguageModeling lm = new LanguageModeling(dc, 30, 0.7, 0.2);
+        LanguageModeling lm = new LanguageModeling(dc, 0.7, 0.2);
 //        lm.run();
         lm.selectHighTFTerms();
 //      lm.TFIDFBaselineRun();
