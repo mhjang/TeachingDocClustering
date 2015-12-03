@@ -22,15 +22,15 @@ import java.util.HashMap;
 
 public class RegressionAnalysis {
     public static void main(String[] args) {
-        String dir = DatasetDir.CLUSTER_dsa + "/annotation";
+        String dir = DatasetDir.CLUSTER_OS_removed;
         TFIDFCalculator tfidf = null;
         try {
-            tfidf = new TFIDFCalculator(true);
+            tfidf = new TFIDFCalculator(false);
             tfidf.calulateTFIDF(TFIDFCalculator.LOGTFIDF, dir, Tokenizer.BIGRAM, false);
             HashMap<String, Document> documentSet = tfidf.documentSet;
-            ClusteringFMeasure eval = new ClusteringFMeasure(null, "./goldstandard/topics_v2_stemmed", "./goldstandard/goldstandard_v2.csv", null);
+            ClusteringFMeasure eval = new ClusteringFMeasure(null, "./goldstandard/os_topics", "./goldstandard/os_goldstandard", null);
 
-            SimpleFileWriter sw = new SimpleFileWriter("dsa_regression_full.txt");
+            SimpleFileWriter sw = new SimpleFileWriter("os_regression_removed.txt");
             DirectoryReader dr = new DirectoryReader(dir);
             ArrayList<String> filelist = dr.getFileNameList();
             for(int i=0; i<filelist.size(); i++) {
@@ -41,7 +41,7 @@ public class RegressionAnalysis {
                     double similarity = CosineSimilarity.TFIDFCosineSimilarity(d1, d2);
                     int label = eval.isSameClass(d1.getName(), d2.getName())? 1: 0;
                     System.out.println(d1.getName() + "\t" + d2.getName() + "\t" + similarity + "\t" + label);
-                    sw.writeLine(d1.getName() + "\t" + d2.getName() + "\t" + similarity + "\t" + label);
+                    sw.writeLine(similarity + "\t" + label);
                 }
             }
 

@@ -48,9 +48,6 @@ public class FeatureExtractor {
         }
         */
 
-
-
-
         return extractor.run(baseDir, fileList, isLearningMode);
     }
 

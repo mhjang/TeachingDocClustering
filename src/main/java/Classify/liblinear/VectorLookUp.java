@@ -1,5 +1,6 @@
 package Classify.liblinear;
 
+import Classify.liblinear.datastructure.DatasetDir;
 import Classify.liblinear.datastructure.WordVector;
 import simple.io.myungha.SimpleFileReader;
 
@@ -12,7 +13,7 @@ public class VectorLookUp {
     HashMap<String, WordVector> lookup = new HashMap<String, WordVector>();
     public VectorLookUp() {
         try {
-            SimpleFileReader sr = new SimpleFileReader("/Users/mhjang/Documents/workspace/dl4j/vec.txt/");
+            SimpleFileReader sr = new SimpleFileReader(DatasetDir.WORD_EMBEDDING);
             while(sr.hasMoreLines()) {
                 String line = sr.readLine();
                 String[] tokens = line.split(" ");

@@ -1,5 +1,6 @@
 package componentDetection;
 
+import Classify.liblinear.datastructure.DatasetDir;
 import TeachingDocParser.Tokenizer;
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.HashMultiset;
@@ -32,7 +33,7 @@ public class DetectTable {
 
     public DetectTable() {
         try {
-            String baseDir = "/Users/mhjang/Desktop/Research/TeachingDocClustering/dataset/training/combined/";
+            String baseDir = DatasetDir.CLASSIFY_combined;
             tablePatternUnigram = HashMultiset.create();
             BufferedReader br = new BufferedReader(new FileReader(new File(baseDir + "stats/table.1gram")));
             String line;

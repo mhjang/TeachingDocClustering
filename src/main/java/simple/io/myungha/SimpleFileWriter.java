@@ -9,6 +9,10 @@ public class SimpleFileWriter {
 		public SimpleFileWriter(String filename) throws IOException {
 			fw = new FileWriter(new File(filename));
 		}
+
+		public SimpleFileWriter(String filename, boolean append) throws IOException {
+			fw = new FileWriter(new File(filename), append);
+		}
 		public void writeLine(String line) throws IOException{
 			fw.append(line+"\n");
 			fw.flush();

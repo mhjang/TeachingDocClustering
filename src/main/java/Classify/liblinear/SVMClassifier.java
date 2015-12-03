@@ -3,11 +3,13 @@ package Classify.liblinear;
 import Classify.TagConstant;
 import Classify.liblinear.datastructure.DatasetDir;
 import Classify.liblinear.datastructure.FeatureParameter;
+import Classify.liblinear.datastructure.ResultReport;
 import Classify.noisegenerator.TableGenerator;
 import com.google.common.collect.HashMultiset;
 import com.google.common.collect.Multiset;
 import de.bwaldvogel.liblinear.*;
 import simple.io.myungha.DirectoryReader;
+import simple.io.myungha.SimpleFileWriter;
 
 import java.io.BufferedWriter;
 import java.io.File;
@@ -42,11 +44,17 @@ public class SVMClassifier {
 
 
 
-    public static void main(String[] args) {
-        SVMClassifier svm = new SVMClassifier();
-
+    public static void main(String[] args) throws Exception  {
+        SimpleFileWriter sw = new SimpleFileWriter("report_slides.txt", true);
         int featureUnit = FeatureExtractor.LINE_BASED;
         String baseDir = DatasetDir.CLASSIFY_combined;
+        String datasetLabel = null;
+        if(baseDir == DatasetDir.CLASSIFY_slides)
+            datasetLabel = "Slides";
+        else if(baseDir == DatasetDir.CLASSIFY_acl)
+            datasetLabel = "ACL";
+        else if(baseDir == DatasetDir.CLASSIFY_combined)
+            datasetLabel = "Combined";
 
   //    routine 1: do five fold cross validation with annotation to evaluate the accuracy
    //     boolean useAnnotationForPreviousNode = true;
@@ -54,17 +62,49 @@ public class SVMClassifier {
    //     svm.runFiveFoldCrossValidation(baseDir, useAnnotationForPreviousNode, writeModel, featureUnit);
 
         // routine 2: use all data for learning a model and use the model for five fold cross validation by predicting "previous_label" field
-        svm.firstModel = "combined_embedding_1st";
-        svm.secondModel = "combined_embedding_final";
 
-        svm.learnFirstModel(baseDir);
-        svm.learnSecondModel(baseDir);
 
-        boolean isFirstModelEvaluation = false; // in ohter words, do we use sequential features?
-        boolean useAnnotation = false; // true when evaluating  "acl_second_annotation_model", false when evaluating "acl_second_prediction_model"
+ //       for(int i=0; i<FeatureExperiment.features.length; i++) {
+ //           if(i==1) FeatureExperiment.embeddingFeature = true;
 
-        svm.runFiveFoldCrossValidation(baseDir,isFirstModelEvaluation, useAnnotation, FeatureExtractor.LINE_BASED);
+            FeatureExperiment.parsingFeature = true;
+            FeatureExperiment.tableFeature = true;
+            FeatureExperiment.sequentialFeature = true;
+            FeatureExperiment.ngramFeature = true;
+            FeatureExperiment.embeddingFeature = true;
+     //       FeatureExperiment.codeFeature = false;
 
+            SVMClassifier svm = new SVMClassifier();
+            svm.firstModel = "combined_embedding_1st";
+            svm.secondModel = "combined_embedding_final";
+
+            svm.learnFirstModel(baseDir);
+            svm.learnSecondModel(baseDir);
+            boolean isFirstModelEvaluation = false; // in ohter words, do we use sequential features?
+            boolean useAnnotation = false; // true when evaluating  "acl_second_annotation_model", false when evaluating "acl_second_prediction_model"
+            ResultReport report = svm.runFiveFoldCrossValidation(baseDir, isFirstModelEvaluation, useAnnotation, FeatureExtractor.LINE_BASED);
+            sw.writeLine("Dataset: " + datasetLabel);
+            sw.write("Features used: ");
+            if (FeatureExperiment.ngramFeature)
+                sw.write("Ngram \t");
+            if (FeatureExperiment.parsingFeature)
+                sw.write("Parsing \t");
+            if (FeatureExperiment.tableFeature)
+                sw.write("TableFeature \t");
+            if (FeatureExperiment.codeFeature)
+                sw.write("codeFeature \t");
+            if (FeatureExperiment.embeddingFeature)
+                sw.write("embedding \t");
+            if (FeatureExperiment.sequentialFeature)
+                sw.write("sequential \t");
+            sw.write("\n");
+            sw.writeLine("TABLE \t" + report.tableAccuracy[0] + "\t" + report.tableAccuracy[1]);
+            sw.writeLine("CODE \t" + report.codeAccuracy[0] + "\t" + report.codeAccuracy[1]);
+            sw.writeLine("EQUATION \t" + report.equAccuracy[0] + "\t" + report.equAccuracy[1]);
+            sw.writeLine("MISC \t" + report.miscAccuracy[0] + "\t" + report.miscAccuracy[1]);
+            report.print();
+   //     }
+        sw.close();
 
    /*    TableGenerator t = svm.getTableGenerator();
         for(int i=0; i<10; i++) {
@@ -72,7 +112,8 @@ public class SVMClassifier {
             t.generateTable();
         }
 */
- //       String applyDir = DatasetDir.CLUSTER_dsa;
+   //       String applyDir = DatasetDir.CLUSTER_ds;
+  //      String applyDir = DatasetDir.CLUSTER_acl;
         // routine 3: apply the learned model to generate the noise-free version of documents
   //      svm.applyModelToDocuments(applyDir);
 
@@ -175,7 +216,7 @@ public class SVMClassifier {
     /**
      * @param baseDir
      */
-    public void runFiveFoldCrossValidation(String baseDir, boolean firstModelEvaluation, boolean useAnnotation, int featureUnit) {
+    public ResultReport runFiveFoldCrossValidation(String baseDir, boolean firstModelEvaluation, boolean useAnnotation, int featureUnit) {
         System.out.println("Running five fold cross validation with annotation " + ((useAnnotation)? "on" : "off"));
         try {
             Problem problem;
@@ -213,10 +254,12 @@ public class SVMClassifier {
             Linear.crossValidation(problem, param, nr_fold, target);
 
             // evaluate it by comparing target and ef.answers
-            evaluate(target, ef.getTrainingAnswers(), ef.getOriginalText(), true);
+            ResultReport report = evaluate(target, ef.getTrainingAnswers(), ef.getOriginalText(), true);
+            return report;
         } catch (Exception e) {
             e.printStackTrace();
         }
+        return null;
     }
 
     public void setModel(String modelName) {
@@ -282,6 +325,61 @@ public class SVMClassifier {
     }
 
 
+
+
+    public void applyModelToDocument(String dir) {
+        try {
+            // read the models
+            File file1 = new File(firstModel);
+            Model firstModel = Linear.loadModel(file1);
+            FeatureParameter.setFirstModel(firstModel);
+            //      File file2 = new File(secondModel);
+            //      Model secondModel = Linear.loadModel(file2);
+            //      FeatureParameter.setModelSet(firstModel, secondModel);
+            FeatureParameter.predictPreviousNode = true;
+
+            DirectoryReader dr = new DirectoryReader(dir + "/annotation");
+            // generate features from all annotation files because it's for five fold cross validation
+            LinkedList<Feature[]> allFeatures;
+            // line or token-based?
+            boolean isLearningMode = false;
+            ef = new FeatureExtractor(dir, dr.getFileNameList(), isLearningMode);
+            ef.extractFeatures(FeatureExtractor.LINE_BASED);
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    /*
+        for command line call
+        takes the file name and only applies the classifier to the file
+     */
+    public void applyModelToDocument(String dir, String filename) {
+        try {
+            // read the models
+            File file1 = new File(firstModel);
+            Model firstModel = Linear.loadModel(file1);
+            FeatureParameter.setFirstModel(firstModel);
+            //      File file2 = new File(secondModel);
+            //      Model secondModel = Linear.loadModel(file2);
+            //      FeatureParameter.setModelSet(firstModel, secondModel);
+            FeatureParameter.predictPreviousNode = true;
+
+            DirectoryReader dr = new DirectoryReader(dir + "/annotation");
+            // generate features from all annotation files because it's for five fold cross validation
+            LinkedList<Feature[]> allFeatures;
+            // line or token-based?
+            boolean isLearningMode = false;
+            ArrayList<String> filenameList = new ArrayList<String>();
+            ef = new FeatureExtractor(dir, filenameList, isLearningMode);
+            ef.extractFeatures(FeatureExtractor.LINE_BASED);
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
     public void applyModelToDocuments(String dir) {
         try {
                 // read the models
@@ -316,7 +414,7 @@ public class SVMClassifier {
      * @param predictions
      * @param answers
      */
-    public void evaluate(double[] predictions, double[] answers, ArrayList<String> lines, boolean evaluateByComponent) {
+    public ResultReport evaluate(double[] predictions, double[] answers, ArrayList<String> lines, boolean evaluateByComponent) {
         int correctItem = 0;
         int predictedComponents = 0;
         // recall denominator
@@ -355,17 +453,21 @@ public class SVMClassifier {
         System.out.println("Total Accuracy: " + (double) correctItem / (double) predictions.length);
         System.out.println("NonTextualComponent: Precision, Recall");
         int truthTotal = 0;
+        ResultReport report = new ResultReport();
         for (Integer label : truthSet.elementSet()) {
-            System.out.println(TagConstant.getTagLabel(label) + "\t" + (double) (correctItemSet.count(label) / (double) (occurrenceSet.count(label))) + "\t" + (double) (correctItemSet.count(label) / (double) (truthSet.count(label))));
+            double prec = (double)(correctItemSet.count(label)) / (double)(occurrenceSet.count(label));
+            double recall = (double) (correctItemSet.count(label)) / (double) (truthSet.count(label));
+            report.setAccuracy(label, prec, recall);
+        //  System.out.println(TagConstant.getTagLabel(label) + "\t" + (double) (correctItemSet.count(label) / (double) (occurrenceSet.count(label))) + "\t" + (double) (correctItemSet.count(label) / (double) (truthSet.count(label))));
             truthTotal += truthSet.count(label);
-
         }
         /*
-        System.out.println("truth data ratio");
-        for (Integer label: truthSet.elementSet()) {
-            System.out.println(TagConstant.getTagLabel(label) + "\t" + (double) (truthSet.count(label) / (double) truthTotal));
-        }
+            System.out.println("truth data ratio");
+            for (Integer label: truthSet.elementSet()) {
+                System.out.println(TagConstant.getTagLabel(label) + "\t" + (double) (truthSet.count(label) / (double) truthTotal));
+            }
         */
+        return report;
     }
 
 

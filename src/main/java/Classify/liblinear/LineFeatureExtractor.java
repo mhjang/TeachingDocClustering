@@ -170,7 +170,8 @@ public class LineFeatureExtractor extends BasicFeatureExtractor {
                 System.out.println(filename);
 
                 SimpleFileReader treader = new SimpleFileReader(originalDir + filename);
-       //         SimpleFileReader vecReader = new SimpleFileReader(sent2vecDir + filename + ".vec");
+                SimpleFileReader vecReader = null;
+//                SimpleFileReader vecReader = new SimpleFileReader(sent2vecDir + filename + ".vec");
                 boolean isTagBeginLine = false;
                 String endTag = null;
 
@@ -192,13 +193,13 @@ public class LineFeatureExtractor extends BasicFeatureExtractor {
                 }
                 // reading "/text" files
                 ArrayList<String> originalLines = new ArrayList<String>();
-       //         vecReader.hasMoreLines(); // reading away the first line
+ //               vecReader.hasMoreLines(); // reading away the first line
                 String v = "";
                 ArrayList<double[]> vectorLines = new ArrayList<double[]>();
                 while (treader.hasMoreLines()) {
-      //              vecReader.hasMoreLines();
+  //                 vecReader.hasMoreLines();
                     l = treader.readLine();
-     //               v = vecReader.readLine();
+//                    v = vecReader.readLine();
                     if (l.isEmpty() || l.trim().length() == 0 || l.replace(" ", "").length() == 0) continue;
                     else {
                         originalLines.add(l);
@@ -270,7 +271,7 @@ public class LineFeatureExtractor extends BasicFeatureExtractor {
 
                     textLine = originalLines.get(j);
                     vector = vectorLines.get(j++);
-                    System.out.println(filename + ": " + line + "vs  "+ textLine);
+             //       System.out.println(filename + ": " + line + "vs  "+ textLine);
 
              //       if(line.trim().toLowerCase().charAt(0) != textLine.trim().toLowerCase().charAt(0))
              //           System.out.println(i + ":" + line + " vs " + textLine);
@@ -416,68 +417,50 @@ public class LineFeatureExtractor extends BasicFeatureExtractor {
         return false;
     }
 
+
+
     /**
      * line-based extraction
      */
     private LinkedList<Feature> extractFeatures(FeatureParameter param) {
         LinkedList<Feature> features = new LinkedList<Feature>();
         DEPTree tree = param.getParsingTree();
-        int size = tree.size(), featureIndx;
+        int size = tree.size();
         Multiset<Integer> dependentRelationBag = HashMultiset.create();
         Multiset<Integer> grams = HashMultiset.create();
         Multiset<String> codeDetect = HashMultiset.create();
         Multiset<Integer> posTagBag = HashMultiset.create();
 
-       // Table component baseline
-        String line = param.getCurrentLine().replace("<TABLE>","").replace("</TABLE>","");
-        String prev_1_line = param.getPrev_1_line().replace("<TABLE>","").replace("</TABLE>","");
-        String prev_2_line = param.getPrev_2_line().replace("<TABLE>","").replace("</TABLE>","");
-
-        String rline = tableDetecter.encodeString(tableDetecter.restoreParenthesis(line));
-        String rprev_1_line = tableDetecter.encodeString(tableDetecter.restoreParenthesis(prev_1_line));
-        String rprev_2_line = tableDetecter.encodeString(tableDetecter.restoreParenthesis(prev_2_line));
-        int edcount = tableDetecter.getEditDistance(rline, rprev_1_line);
-        int edcount2 = tableDetecter.getEditDistance(rline, rprev_2_line);
-        double probability = tableDetecter.tableLMProbability(rline);
-        double rightMatchingRatio = tableDetecter.getRatioRightMatching(rline, rprev_1_line);
-      //  double leftMatchingRatio = DetectTable.getRatioLeftMatching(rline, rprev_1_line);
-      //  int edcount2 = DetectTable.getEditDistance(rline, rprev_2_line);
-
         HashSet<Integer> featureNodeIndex = new HashSet<Integer>();
 
 
-  /*      else {
-            editDistanceSum += edcount;
-            editDistanceCount++;
-            patternProbWeightedED += edcount * probability;
-            linelinegth += rline.length();
-            rightMatchingRatioForOther += rightMatchingRatio;
-            leftMatchingRatioForOther += leftMatchingRatio;
+        if(FeatureExperiment.tableFeature) {
+            // Table component baseline
+            String line = param.getCurrentLine().replace("<TABLE>", "").replace("</TABLE>", "");
+            String prev_1_line = param.getPrev_1_line().replace("<TABLE>", "").replace("</TABLE>", "");
+            String prev_2_line = param.getPrev_2_line().replace("<TABLE>", "").replace("</TABLE>", "");
+            String rline = tableDetecter.encodeString(tableDetecter.restoreParenthesis(line));
+            String rprev_1_line = tableDetecter.encodeString(tableDetecter.restoreParenthesis(prev_1_line));
+            String rprev_2_line = tableDetecter.encodeString(tableDetecter.restoreParenthesis(prev_2_line));
+            int edcount = tableDetecter.getEditDistance(rline, rprev_1_line);
+            int edcount2 = tableDetecter.getEditDistance(rline, rprev_2_line);
+            double probability = tableDetecter.tableLMProbability(rline);
+            double rightMatchingRatio = tableDetecter.getRatioRightMatching(rline, rprev_1_line);
+
+            features.add(new FeatureNode(getFeatureIndex("FEATURE_EDIT_DISTANCE"), edcount));
+            features.add(new FeatureNode(getFeatureIndex("FEATURE_EDIT_DISTANCE2"), edcount2));
+            features.add(new FeatureNode(getFeatureIndex("FEATURE_COMPLEXITY"), edcount + probability));
+            features.add(new FeatureNode(getFeatureIndex(rline), 1));
+            features.add(new FeatureNode(getFeatureIndex("FEATURE_LENGTH_DIFF"), Math.abs(rline.length() - rprev_1_line.length())));
+            features.add(new FeatureNode(getFeatureIndex("FEATURE_RIGHT_MATCHING"), rightMatchingRatio));
+            featureNodeIndex.add(getFeatureIndex(rline));
 
         }
-*/
-
-        features.add(new FeatureNode(getFeatureIndex("FEATURE_EDIT_DISTANCE"), edcount));
-        features.add(new FeatureNode(getFeatureIndex("FEATURE_EDIT_DISTANCE2"), edcount2));
-        features.add(new FeatureNode(getFeatureIndex("FEATURE_COMPLEXITY"), edcount + probability));
-   //   features.add(new FeatureNode(getFeatureIndex("WEIGHTED_ED"), edcount * probability));
-   //   features.add(new FeatureNode(getFeatureIndex))
-        features.add(new FeatureNode(getFeatureIndex(rline), 1));
-  //    features.add(new FeatureNode(getFeatureIndex("NUMBERTOKEN"), DetectTable.getNumberTokenCount(rline)));
-  //    features.add(new FeatureNode(getFeatureIndex("NUMBERTOKEN2"), Math.abs(DetectTable.getNumberTokenCount(rline) - DetectTable.getNumberTokenCount(rprev_1_line))));
-        features.add(new FeatureNode(getFeatureIndex("FEATURE_LENGTH_DIFF"), Math.abs(rline.length() - rprev_1_line.length())));
-  //    features.add(new FeatureNode(getFeatureIndex("RIGHTMATCHING"), DetectTable.getRatioRightMatching(line, prev_1_line)));
-        features.add(new FeatureNode(getFeatureIndex("FEATURE_RIGHT_MATCHING"), rightMatchingRatio));
-  //    features.add(new FeatureNode(getFeatureIndex("LEFT_MATCHING"), leftMatchingRatio));
-
 
 
         // added word embeddings features 9/26/15
 
-         WordVector lineVector = new WordVector();
-
-
-        featureNodeIndex.add(getFeatureIndex(rline));
+        WordVector lineVector = new WordVector();
 
         for(int i=1; i<size; i++) {
             DEPNode node = tree.get(i);
@@ -491,50 +474,26 @@ public class LineFeatureExtractor extends BasicFeatureExtractor {
             vectorTokenCount[TagConstant.getComponentID(param.getTagType())]++;
 
 
-                List<DEPArc> dependents = node.getDependents();
+            List<DEPArc> dependents = node.getDependents();
             // check feature index duplicate
             HashSet<Integer> featureIndex = new HashSet<Integer>();
 
-            for (DEPArc darc : dependents) {
-                int depId = getFeatureIndex(darc.getLabel());
-                dependentRelationBag.add(getFeatureIndex(node.pos + " " + darc.getNode().pos));
-                dependentRelationBag.add(depId);
+            if(FeatureExperiment.parsingFeature) {
+                for (DEPArc darc : dependents) {
+                    int depId = getFeatureIndex(darc.getLabel());
+                    dependentRelationBag.add(getFeatureIndex(node.pos + " " + darc.getNode().pos));
+                    dependentRelationBag.add(depId);
+                }
             }
 
-
-            // unigram feature
-            grams.add(getFeatureIndex(node.form));
-            // bigram features
-            if(i<size-1) {
-               grams.add(getFeatureIndex(node.form +" " +  tree.get(i+1).form));
-            }
-            posTagBag.add(getFeatureIndex(node.pos));
-
-            // Code component baseline
-
-
-            if (codeBaselineFeatureOn) {
-
-                 // Is this token a bracket?
-                codeDetect.add(IS_BRACKET, DetectCodeComponent.isBracket(node.form) ? 1 : 0);
-
-                // Is this token a Camal case variable name?
-                codeDetect.add(IS_VARIABLE, DetectCodeComponent.isVariable(node.form) ? 1 : 0);
-
-                // Is this token a comment "//"?
-                codeDetect.add(IS_COMMENT, DetectCodeComponent.isComment(node.form) ? 1 : 0);
-
-                // Is this token a programming operator?
-                codeDetect.add(IS_OPERATOR, DetectCodeComponent.isOperator(node.form) ? 1 : 0);
-
-                // Is this token a parenthesis?
-                codeDetect.add(IS_PARENTHESIS, DetectCodeComponent.isParenthesis(node.form) ? 1 : 0);
-
-                // Is this token a parenthesis?
-                codeDetect.add(IS_SEMICOLON, DetectCodeComponent.isSemicolon(node.form) ? 1 : 0);
-
-                // keyword contain
-                codeDetect.add(KEYWORD_CONTAIN, DetectCodeComponent.isThisKeyword(node.form) ? 1 : 0);
+            if(FeatureExperiment.ngramFeature) {
+                // unigram feature
+                grams.add(getFeatureIndex(node.form));
+                // bigram features
+                if (i < size - 1) {
+                    grams.add(getFeatureIndex(node.form + " " + tree.get(i + 1).form));
+                }
+                posTagBag.add(getFeatureIndex(node.pos));
             }
 
         }
@@ -545,50 +504,194 @@ public class LineFeatureExtractor extends BasicFeatureExtractor {
         //embedding features
         boolean sent2vec = false;
 
-        if(sent2vec) {
-            double[] sentenceEmbedding = param.getVector();
-            for (int i = 0; i < 200; i++) {
-                features.add(new FeatureNode(getFeatureIndex("EMBEDDING_" + i), sentenceEmbedding[i]));
+        if(FeatureExperiment.embeddingFeature) {
+            if (sent2vec) {
+                double[] sentenceEmbedding = param.getVector();
+                for (int i = 0; i < 200; i++) {
+                    features.add(new FeatureNode(getFeatureIndex("EMBEDDING_" + i), sentenceEmbedding[i]));
+                }
+            } else { // word2vec avg
+                for (int i = 0; i < 200; i++) {
+                    features.add(new FeatureNode(getFeatureIndex("EMBEDDING_" + i), lineVector.doubleAt(i) / (double) (size)));
+                }
             }
         }
-        else { // word2vec avg
-            for(int i=0; i<200; i++) {
-                features.add(new FeatureNode(getFeatureIndex("EMBEDDING_"+i), lineVector.doubleAt(i)/(double)(size)));
+        if(FeatureExperiment.parsingFeature) {
+            for (Integer id : dependentRelationBag.elementSet()) {
+                if (!featureNodeIndex.contains(id)) {
+                    featureNodeIndex.add(id);
+                    features.add(new FeatureNode(id, (double) dependentRelationBag.count(id) / (double) (size)));
+                }
+
             }
-        }
+            for (Integer id : posTagBag.elementSet()) {
+                if (!featureNodeIndex.contains(id)) {
+                    featureNodeIndex.add(id);
+                    features.add(new FeatureNode(id, posTagBag.count(id)));
+                }
 
-        for(Integer id : dependentRelationBag.elementSet()) {
-            if(!featureNodeIndex.contains(id)) {
-                featureNodeIndex.add(id);
-                features.add(new FeatureNode(id, (double)dependentRelationBag.count(id)/(double)(size)));
-            }
-
-        }
-        for(Integer id : posTagBag.elementSet()) {
-            if(!featureNodeIndex.contains(id)) {
-                featureNodeIndex.add(id);
-                features.add(new FeatureNode(id, posTagBag.count(id)));
-            }
-
-        }
-
-
-     /*   for(Integer id : codeDetect.elementSet()) {
-            if (!featureNodeIndex.contains(id)) {
-                featureNodeIndex.add(id);
-                features.add(new FeatureNode(id, codeDetect.count(id)));
-            }
-        }
-        */
-
-        for(Integer id : grams.elementSet()) {
-            if(!featureNodeIndex.contains(id)) {
-                featureNodeIndex.add(id);
-                features.add(new FeatureNode(id, grams.count(id)));
             }
         }
 
-        features.add(new FeatureNode(getFeatureIndex("PREVIOUS_NODE_PREDICTION"), previousNodePrediction));
+        if(FeatureExperiment.ngramFeature) {
+            for (Integer id : grams.elementSet()) {
+                if (!featureNodeIndex.contains(id)) {
+                    featureNodeIndex.add(id);
+                    features.add(new FeatureNode(id, grams.count(id)));
+                }
+            }
+        }
+
+        if(FeatureExperiment.sequentialFeature)
+            features.add(new FeatureNode(getFeatureIndex("PREVIOUS_NODE_PREDICTION"), previousNodePrediction));
+
+        return features;
+    }
+
+
+    /**
+     * line-based extraction
+     */
+    private LinkedList<Feature> extractFeatures_backup(FeatureParameter param) {
+        LinkedList<Feature> features = new LinkedList<Feature>();
+        DEPTree tree = param.getParsingTree();
+        int size = tree.size(), featureIndx;
+        Multiset<Integer> dependentRelationBag = HashMultiset.create();
+        Multiset<Integer> grams = HashMultiset.create();
+        Multiset<String> codeDetect = HashMultiset.create();
+        Multiset<Integer> posTagBag = HashMultiset.create();
+        WordVector lineVector = null;
+       // Table component baseline
+        String line = param.getCurrentLine().replace("<TABLE>","").replace("</TABLE>","");
+        String prev_1_line = param.getPrev_1_line().replace("<TABLE>","").replace("</TABLE>","");
+        String prev_2_line = param.getPrev_2_line().replace("<TABLE>","").replace("</TABLE>","");
+
+        String rline = tableDetecter.encodeString(tableDetecter.restoreParenthesis(line));
+        String rprev_1_line = tableDetecter.encodeString(tableDetecter.restoreParenthesis(prev_1_line));
+        String rprev_2_line = tableDetecter.encodeString(tableDetecter.restoreParenthesis(prev_2_line));
+        int edcount = tableDetecter.getEditDistance(rline, rprev_1_line);
+        int edcount2 = tableDetecter.getEditDistance(rline, rprev_2_line);
+        double probability = tableDetecter.tableLMProbability(rline);
+        double rightMatchingRatio = tableDetecter.getRatioRightMatching(rline, rprev_1_line);
+
+        HashSet<Integer> featureNodeIndex = new HashSet<Integer>();
+
+
+     //   if(FeatureExperiment.tableFeature) {
+            features.add(new FeatureNode(getFeatureIndex("FEATURE_EDIT_DISTANCE"), edcount));
+            features.add(new FeatureNode(getFeatureIndex("FEATURE_EDIT_DISTANCE2"), edcount2));
+            features.add(new FeatureNode(getFeatureIndex("FEATURE_COMPLEXITY"), edcount + probability));
+            features.add(new FeatureNode(getFeatureIndex(rline), 1));
+            features.add(new FeatureNode(getFeatureIndex("FEATURE_LENGTH_DIFF"), Math.abs(rline.length() - rprev_1_line.length())));
+            features.add(new FeatureNode(getFeatureIndex("FEATURE_RIGHT_MATCHING"), rightMatchingRatio));
+            featureNodeIndex.add(getFeatureIndex(rline));
+
+     //   }
+
+
+        // added word embeddings features 9/26/15
+
+    //    if(FeatureExperiment.embeddingFeature)
+             lineVector = new WordVector();
+
+        for(int i=1; i<size; i++) {
+            DEPNode node = tree.get(i);
+
+      //      if(FeatureExperiment.embeddingFeature) {
+                WordVector wordVector = vlu.getWordVector(node.form.toLowerCase());
+                if (wordVector != null) {
+                    lineVector.addVector(wordVector);
+                }
+                if (wordVector == null)
+                    vectorNullCount[TagConstant.getComponentID(param.getTagType())]++;
+                vectorTokenCount[TagConstant.getComponentID(param.getTagType())]++;
+       //     }
+
+       //     if(FeatureExperiment.parsingFeature) {
+                List<DEPArc> dependents = node.getDependents();
+                // check feature index duplicate
+                for (DEPArc darc : dependents) {
+                    int depId = getFeatureIndex(darc.getLabel());
+                    dependentRelationBag.add(getFeatureIndex(node.pos + " " + darc.getNode().pos));
+                    dependentRelationBag.add(depId);
+                }
+
+                posTagBag.add(getFeatureIndex(node.pos));
+
+      //      }
+       //     if(FeatureExperiment.ngramFeature) {
+                // unigram feature
+                grams.add(getFeatureIndex(node.form));
+                // bigram features
+                if (i < size - 1) {
+                    grams.add(getFeatureIndex(node.form + " " + tree.get(i + 1).form));
+                }
+      //      }
+
+            // Code component baseline
+       //     if (FeatureExperiment.codeFeature) {
+                 // Is this token a bracket?
+                codeDetect.add(IS_BRACKET, DetectCodeComponent.isBracket(node.form) ? 1 : 0);
+                // Is this token a Camal case variable name?
+                codeDetect.add(IS_VARIABLE, DetectCodeComponent.isVariable(node.form) ? 1 : 0);
+                // Is this token a comment "//"?
+                codeDetect.add(IS_COMMENT, DetectCodeComponent.isComment(node.form) ? 1 : 0);
+                // Is this token a programming operator?
+                codeDetect.add(IS_OPERATOR, DetectCodeComponent.isOperator(node.form) ? 1 : 0);
+                // Is this token a parenthesis?
+                codeDetect.add(IS_PARENTHESIS, DetectCodeComponent.isParenthesis(node.form) ? 1 : 0);
+                // Is this token a parenthesis?
+                codeDetect.add(IS_SEMICOLON, DetectCodeComponent.isSemicolon(node.form) ? 1 : 0);
+                // keyword contain
+                codeDetect.add(KEYWORD_CONTAIN, DetectCodeComponent.isThisKeyword(node.form) ? 1 : 0);
+        //    }
+        }
+
+
+
+
+
+    //    if(FeatureExperiment.embeddingFeature) {
+            //embedding features
+            boolean sent2vec = false;
+            if (sent2vec) {
+                double[] sentenceEmbedding = param.getVector();
+                for (int i = 0; i < 200; i++) {
+                    features.add(new FeatureNode(getFeatureIndex("EMBEDDING_" + i), sentenceEmbedding[i]));
+                }
+            } else { // word2vec avg
+                for (int i = 0; i < 200; i++) {
+                    features.add(new FeatureNode(getFeatureIndex("EMBEDDING_" + i), lineVector.doubleAt(i) / (double) (size)));
+                }
+            }
+   //     }
+
+   //     if(FeatureExperiment.parsingFeature) {
+            for (Integer id : dependentRelationBag.elementSet()) {
+                if (!featureNodeIndex.contains(id)) {
+                    featureNodeIndex.add(id);
+                    features.add(new FeatureNode(id, (double) dependentRelationBag.count(id) / (double) (size)));
+                }
+            }
+            for (Integer id : posTagBag.elementSet()) {
+                if (!featureNodeIndex.contains(id)) {
+                    featureNodeIndex.add(id);
+                    features.add(new FeatureNode(id, posTagBag.count(id)));
+                }
+            }
+   //     }
+
+   //     if(FeatureExperiment.ngramFeature) {
+            for (Integer id : grams.elementSet()) {
+                if (!featureNodeIndex.contains(id)) {
+                    featureNodeIndex.add(id);
+                    features.add(new FeatureNode(id, grams.count(id)));
+                }
+            }
+    //    }
+
+   //     if(FeatureExperiment.sequentialFeature)
+            features.add(new FeatureNode(getFeatureIndex("PREVIOUS_NODE_PREDICTION"), previousNodePrediction));
 
         return features;
     }
@@ -670,6 +773,7 @@ public class LineFeatureExtractor extends BasicFeatureExtractor {
             boolean a = true;
         }
         LinkedList<Feature> features = extractFeatures(param);
+
 //        extractFeatureVocabulary(param);
 
         // System.out.println(param.getTagType() + ": " + answers[featureIdx]);
@@ -679,6 +783,12 @@ public class LineFeatureExtractor extends BasicFeatureExtractor {
         Feature[] featureArray;
         featureArray = features.toArray(new Feature[features.size()]);
 
+
+        int prev = -1;
+        for(Feature f : featureArray) {
+            if(f.getIndex()<= prev) System.out.println("duplicate: " + featureinverseMap.get(prev));
+            prev = f.getIndex();
+        }
         double answer;
         if (component != null)
             answer = component.intermediate;

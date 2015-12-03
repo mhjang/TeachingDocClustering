@@ -161,7 +161,7 @@ public class TermExtractor {
         attachInstruction();
         String[] colors = {"yellow", "Coral", "orange", "DarkSalmon", "DarkTurquoise", "GreenYellow", "lime", "teal", "Pink", "Salmon", "SlateBlue", "Skyblue", "RoyalBlue", "Violet", "Tomato"};
         ClusteringFMeasure cfm = new ClusteringFMeasure();
-        HashMap<Integer, HashSet<String>> goldSet = cfm.readGoldstandard("./annotation/goldstandard_v2.csv");
+        HashMap<Integer, HashSet<String>> goldSet = cfm.readGoldstandard("./annotation/dsa_goldstandard");
         TFIDFCalculator tfidf = new TFIDFCalculator(true);
         tfidf.calulateTFIDF(TFIDFCalculator.LOGTFIDF,"/Users/mhjang/Documents/teaching_documents/extracted/stemmed/parsed/noise_removed", Tokenizer.UNIGRAM, false);
         DocumentCollection dc = tfidf.getDocumentCollection();
@@ -176,7 +176,7 @@ public class TermExtractor {
         Integer clusterLabelIndex = 0;
         HashMap<String, Integer> clusterLabelMap = new HashMap<String, Integer>();
         // reading a topic file
-        BufferedReader br = new BufferedReader(new FileReader(new File("./topics_resource/topics_v2_stemmed")));
+        BufferedReader br = new BufferedReader(new FileReader(new File("./topics_resource/dsa_topics")));
         ArrayList<String> topiclist = new ArrayList<String>();
         String line = null;
        System.out.println("<script src=\"http://ajax.googleapis.com/ajax/libs/jquery/1.10.2/jquery.min.js\"></script>");

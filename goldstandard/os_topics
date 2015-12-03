@@ -1,15 +1,15 @@
-introduction overview what is an operate system?
-os structure
+introduction overview
+os architecture
 process management
 thread
-process synchronize 
+process synchronize semaphore
 cpu schedule 
 deadlock 
 memory management
 virtual memory
-file system 
+file system nfs fat
 io system
 mass storage system
 distribute system
 unix linux kernel
-protect security
+security

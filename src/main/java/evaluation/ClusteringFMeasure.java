@@ -25,6 +25,30 @@ public class ClusteringFMeasure {
     ArrayList<String> topiclist;
     DocumentCollection dc;
 
+
+    public ClusteringFMeasure(LinkedList<LinkedList<String>> clusters, String goldDir) {
+        LinkedList<LinkedList<String>> goldstandard = null;
+        Integer clusterID = 0;
+        try {
+            BufferedReader br = new BufferedReader(new FileReader(goldDir));
+            goldstandard = new LinkedList<LinkedList<String>>();
+            String line;
+            while ((line = br.readLine()) != null) {
+                String[] elements = line.split(",");
+                LinkedList<String> documents = new LinkedList<String>();
+                for (int i = 0; i < elements.length; i++) {
+                    if (elements[i].length() > 0) {
+                        documents.add(elements[i]);
+                    }
+                }
+                goldstandard.add(documents);
+            }
+        }catch(Exception e) {
+            e.printStackTrace();
+        }
+
+
+    }
     public ClusteringFMeasure(HashMap<String, LinkedList<String>> clusters_, String topicDir, String goldDir, DocumentCollection dc) {
         try {
             Integer clusterLabelIndex = 0;
@@ -295,7 +319,7 @@ public class ClusteringFMeasure {
             avgRecall += recall;
 
             fMeasure = (2 * precision * recall) / (precision + recall);
-    //        System.out.println(clusterName + "\t" + precision + "\t" + recall + "\t" + fMeasure);
+   //         System.out.println(clusterName + "\t" + precision + "\t" + recall + "\t" + fMeasure);
         }
         double length = (double)topiclist.size();
         avgPrecision /= length;

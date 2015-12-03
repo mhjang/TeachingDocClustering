@@ -25,6 +25,8 @@
         <module name="TeachingDocClustering" />
       </profile>
     </annotationProcessing>
+    <bytecodeTargetLevel>
+      <module name="TeachingDocClustering" target="1.5" />
+    </bytecodeTargetLevel>
   </component>
 </project>
-
